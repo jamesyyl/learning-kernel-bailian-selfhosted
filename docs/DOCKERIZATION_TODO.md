@@ -14,7 +14,7 @@
 |---|---|---|---|
 | 0 | 將指定 HTML 放進新 repo，保留原檔 | 完成 | HTML 原樣保留；後續功能修改以它為基線。 |
 | 1 | 建立 Nginx＋Python Runtime 的 Compose 底座 | 完成 | 同源代理；Python 載入固定 SDK；SQLite 可另設資料目錄；瀏覽器不能呼叫 Pack 管理或 trusted returns。 |
-| 2 | Windows 11＋WSL2 建置和 Runtime 驗收 | 本機通過（2026-10-12） | Docker 29.8.2、Compose 5.5.1；兩個映像成功建置，web/runtime containers healthy；`/healthz` 回 `ok`；Runtime restart 後 readiness 為 schema revision 4，`data/learning-kernel.sqlite3` 存在（4096 bytes）；完整 unittest 11 項全通過、0 skipped，包含 pinned SDK migration 測試。 |
+| 2 | Windows 11＋WSL2 建置和 Runtime 驗收 | 本機通過（2026-10-12） | Docker 29.8.2、Compose 5.5.1；兩個映像成功建置，web/runtime containers healthy；`/healthz` 回 `ok`；Runtime restart 後 readiness 為 schema revision 4，`data/learning-kernel.sqlite3` 存在（4096 bytes）；完整 unittest 11 項全通過、0 skipped；瀏覽器成功載入 `http://localhost:8080/#today`，首頁畫面確認正常。 |
 | 3 | 準備 U1 Pack 與合法 Activity Pool 供應 | 未完成，等 SDK 供應流程 | 安裝確切 Pack release，匯入同一 release/digest 且通過驗證的 Pool Entry。SDK 的 U1 Activity Pool Gate B 尚未封板；不可塞入未驗證題目或測試資料冒充通過。 |
 | 4 | 把 Option 2 練習頁接到 LK | 未完成，依賴 3 | 用 Runtime Surface IR 顯示活動；只送 raw observation；不在瀏覽器判分。LK 尚未供應的科目如實顯示未開放；保留三種模式與 Learning Journey，但不造假進度。 |
 | 5 | NAS 持久化與存取邊界 | 未完成 | SQLite 放在 repo 外的 FnOS 資料夾；先只供家中網路／既有 Tailscale；不做路由器埠轉發。此版沒有帳號登入。 |
@@ -28,7 +28,8 @@
 - SDK 正式 `0001`–`0004` migration 已在 SQLite 3.53.1 實際套用至 schema revision 4，重跑不會重複套用。
 - Windows 11＋WSL2 完整 unittest：11 項通過、0 skipped；已包含 pinned SDK migration 測試。
 - Windows 11＋WSL2 實際 Docker Compose build、Runtime/web health、readiness 與 restart 後資料檔檢查通過。
+- 使用者提供的瀏覽器截圖確認 Option 2 首頁可在 `localhost:8080/#today` 顯示；按鈕與導覽流程尚未逐項驗收。
 
 ## 目前不可用的部分
 
-Option 2 仍是示範頁，沒有呼叫 Runtime，也不保存學習資料。尚未安裝 Pack，且沒有已驗證的 Activity Pool Entry；即使 Runtime 容器成功啟動，也不能宣稱已有真實練習可用。瀏覽器實際檢視、NAS 備份及 FnOS 驗收仍待完成。PR 維持 draft，不供孩子作正式學習使用。
+Option 2 仍是示範頁，沒有呼叫 Runtime，也不保存學習資料。首頁畫面已確認可載入，但互動流程尚未逐項驗收。尚未安裝 Pack，且沒有已驗證的 Activity Pool Entry；即使 Runtime 容器成功啟動，也不能宣稱已有真實練習可用。NAS 備份及 FnOS 驗收仍待完成。PR 維持 draft，不供孩子作正式學習使用。
