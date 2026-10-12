@@ -17,6 +17,7 @@
 | 2 | Windows 11＋WSL2 建置和 Runtime 驗收 | 本機通過（2026-10-12） | Docker 29.8.2、Compose 5.5.1；兩個映像成功建置，web/runtime containers healthy；`/healthz` 回 `ok`；Runtime restart 後 readiness 為 schema revision 4，`data/learning-kernel.sqlite3` 存在（4096 bytes）；完整 unittest 11 項全通過、0 skipped；首頁基礎載入確認。完整學習流程記錄於第 4 項。 |
 | 3 | 準備 U1 Pack 與合法 Activity Pool 供應 | 本機通過（2026-10-12） | WSL Docker build 後，`docker compose exec runtime python -m api.seed_u1` 首次及再次執行皆成功；同源 Surface HTTP 200、schema `learning-kernel.surface-ir@1`、Pack 0.3.1。 |
 | 4 | 把 Option 2 練習頁接到 LK | 程式已寫；本機瀏覽器通過（2026-10-12） | 首頁選數學 U1、載入真實 Surface、完成單選及多選兩步、每步收到 Runtime 保存回覆；頁面只送 raw observation，沒有瀏覽器判分。未接通科目與學習摘要標示尚未開放。 |
+| 4.5 | LK 判斷結果與孩子可理解的回饋 | 下一步，未完成 | 目前答對答錯皆只顯示「已保存」。先查明 pinned SDK 的 trusted evaluation／evidence／next decision 路徑，讓 Runtime 判斷、百煉顯示正誤與下一步；錯題可再試或取得對應提示。以本機瀏覽器分別實測答對、答錯，確認不能由前端判分或接觸正確答案。 | 
 | 5 | NAS 持久化與存取邊界 | 未驗證（不阻擋本機使用） | 本機 bind mount 的 SQLite 已保存 observation/attempt/evidence，Runtime 重啟後計數不變；FnOS/NAS 路徑、區網存取與正式部署仍待另行驗收。此版沒有帳號登入。 |
 | 6 | 簡單 SQLite 備份（後置） | 暫緩，不阻擋開發 | 先完成 LK 活動與作答流程；有正式學習資料後，再加入本機資料庫快照和還原。 |
 | 7 | FnOS/N100 驗收 | 未完成，依賴 2–5 | linux/amd64 冷啟、重啟、資料保存、raw observation 通過；備份後續補上。 |
@@ -37,4 +38,4 @@
 
 ## 目前不可用的部分
 
-本機 Math U1 練習已可用；其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime，頁面明確標為尚未開放。更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。PR 維持 draft。
+本機 Math U1 已能出題與保存作答，但答對與答錯目前都只顯示中性保存訊息，尚未提供孩子可理解的判斷、錯題回饋或依結果選擇下一步。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime，頁面明確標為尚未開放。更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。PR 維持 draft。
