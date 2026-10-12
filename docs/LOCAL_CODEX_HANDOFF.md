@@ -33,7 +33,7 @@
 1. 擴充 Math U1 題目覆蓋前，沿用 pinned SDK Surface 和 observation 契約；完成後仍需逐步在本機瀏覽器驗收。
 2. 其他科目、學習摘要、專項/自訂模式尚未接通，繼續保持尚未開放狀態，不顯示推算進度。
 3. FnOS/NAS、區網存取邊界及備份是獨立後續項目，不阻擋本機數學 U1 使用。
-4. 本次程式與文件已在本機 commit；WSL `git push` 因缺少 GitHub Username/write 認證而未完成，draft PR #1 的遠端 head 尚未更新。認證可用後推送到 `feat/option2-docker-shell` 並確認 PR head；不要 merge，也不要主動觸發 GitHub Actions。
+4. 本次程式與驗收文件已推送到 `feat/option2-docker-shell`，draft PR #1 已更新且維持 draft；未 merge，也未觸發 GitHub Actions。
 
 ## 重要檔案與參考
 
