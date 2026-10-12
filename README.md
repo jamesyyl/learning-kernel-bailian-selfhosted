@@ -8,7 +8,7 @@ The supplied static shell and a Python Runtime host are packaged as separate Lin
 
 The SDK's four vNext Runtime SQL migrations were applied to SQLite 3.53.1 during development; they created schema revision 4. The adapter, migration runner, and learner-route allowlist have focused local tests.
 
-The HTML remains a demonstration UI: it does not call LK or persist learner data. No Pack is installed or activated yet, and Docker image build has not been run in this environment. Do not use this stage for real learning records.
+The HTML remains a demonstration UI: it does not call LK or persist learner data. No Pack is installed, and no validated Activity Pool entry is available. The SDK's current U1 Activity Pool supply gate is still open; do not insert unverified sample activities as a shortcut. Docker image build has not been run in this environment. Do not use this stage for real learning records.
 
 The original `learning-kernel-bailian` repository and the canonical `learning-kernel-sdk` remain separate and are not changed by this project.
 
@@ -48,4 +48,4 @@ Set `BAILIAN_DATA_PATH` to a NAS directory outside the checkout, for example `/v
 
 ## Next integration gate
 
-Install and activate the intended Pack through an operator-only path, then wire the shell to the allowlisted Surface and raw-observation routes. Add encrypted scheduled backups and verify restore before moving the data directory to FnOS. The browser boundary must not submit trusted evaluation results or invent learner-state rules.
+See [the ordered Dockerization TODO](docs/DOCKERIZATION_TODO.md). The next product gate is an accepted Pack plus exact-release, validated Activity Pool supply; the SDK's U1 supply Gate B is still open. Only after that can the shell render a real LK Surface and submit raw observations. Add encrypted scheduled backups and verify restore before moving the data directory to FnOS. The browser boundary must not submit trusted evaluation results or invent learner-state rules.
