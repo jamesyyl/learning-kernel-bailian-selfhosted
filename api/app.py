@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from api.feedback_runtime import LearnerFeedbackRuntime
 from api.migrations import apply_runtime_migrations
 from api.sqlite_d1 import SqliteD1Database
 
@@ -60,7 +61,7 @@ def _runtime_service(database: SqliteD1Database):
         surface_cors_origin=origin,
         allow_home_projection=False,
     )
-    return service
+    return LearnerFeedbackRuntime(service, database)
 
 
 class _RuntimeRequestHandler(BaseHTTPRequestHandler):
@@ -105,7 +106,9 @@ class _RuntimeRequestHandler(BaseHTTPRequestHandler):
 
         expected_secret = self.server.binding_secret  # type: ignore[attr-defined]
         supplied_secret = self.headers.get("x-lk-bailian-service-secret")
-        from apps.runtime_vnext.worker.runtime_http import is_valid_service_binding_secret
+        from apps.runtime_vnext.worker.runtime_http import (
+            is_valid_service_binding_secret,
+        )
 
         if not is_valid_service_binding_secret(expected_secret, supplied_secret):
             self._send(*_json_error(404, "not_found"))
@@ -181,9 +184,13 @@ def main() -> None:
     from apps.runtime_vnext.worker.runtime_http import is_valid_service_binding_secret
 
     if not is_valid_service_binding_secret(binding_secret, binding_secret):
-        raise ValueError("BAILIAN_SERVICE_BINDING_SECRET must contain at least 32 bytes.")
+        raise ValueError(
+            "BAILIAN_SERVICE_BINDING_SECRET must contain at least 32 bytes."
+        )
 
-    database_path = Path(os.environ.get("LK_DATABASE_PATH", "/data/learning-kernel.sqlite3"))
+    database_path = Path(
+        os.environ.get("LK_DATABASE_PATH", "/data/learning-kernel.sqlite3")
+    )
     database_path.parent.mkdir(parents=True, exist_ok=True)
     database = SqliteD1Database.open(database_path)
     migrations = Path(

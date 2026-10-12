@@ -1,6 +1,6 @@
 # 本地 Codex 交接：Option 2 自架開發
 
-更新：2026-10-12。這份文件記錄 PR #1 最終驗收與後續交接。工作 repo：`jamesyyl/learning-kernel-bailian-selfhosted`，分支 `feat/option2-docker-shell`。目前 main／feature refs 的 commit Author/Committer 已改用 GitHub noreply；改寫前後 tree 與 PR diff 相同。不過 GitHub Commit API 仍可讀取改寫前的 main 與 feature SHA，回傳舊 metadata，因此 PR #1 仍為 Draft、未合併。開始新工作前先 fetch 並查看 GitHub PR 的最新狀態。
+更新：2026-10-12。PR #1 已 squash merge 至 main，merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`。目前 PR #2 工作分支為 `codex/phase4-5-trusted-feedback`，從最新 main 建立；PR #2「LK Trusted Evaluation Feedback + Retry」已完成本機實作與驗收，等待使用者體驗，不要合併。此文件更新聚焦 PR #2 功能交接。
 
 ## 使用者決定與目標
 
@@ -9,6 +9,16 @@
 - 優先完成能在本機瀏覽器實際使用的數學 U1 出題、作答、原始觀察紀錄與再次讀取流程，然後再擴張。個人使用、家中區域網；加密、雲端／每日備份、登入、GitHub Actions、額外部署流程都不是當前門檻。不要因這些議題卡住功能開發。
 - 不要假稱其他科目已有 LK 支援。未供應的活動可清楚標示尚未開放；不要用網頁內假進度、假判分替代 Runtime 結果。
 - 不要求使用者每一步貼輸出給遠端代理。本地 Codex 可以直接在 WSL 執行、修正與驗證。PR #1 的提交身分隱私修正已依使用者授權處理；main 與 feature branch 的程式碼樹保持一致，原提交訊息、名稱、時間戳及祖先關係保留。
+
+## PR #2 當前狀態（2026-10-12）
+
+- pinned canonical SDK `b63404173e39a37685e9914523ba3704ac1664ad` 的 Runtime evaluation 是 correct/incorrect/indeterminate 唯一判斷來源；沒有修改 SDK 或其 submodule 指向。
+- Runtime host 以最小 adapter 觀察一次 canonical verdict，僅向允許的 raw-observation response 加入非敏感 verdict、tone、message、action；既有 browser route allowlist 不變。答案、validation payload、判分規則與特權路由不提供給瀏覽器。
+- 錯誤作答留在原題、清除選取並可再次送出；每次新嘗試產生新 ID、ordinal/count 遞增、retryCount 隨 ordinal 增加。網路不確定重送沿用同一個 pending capture。完全相同的 HTTP 請求由持久 SQLite response cache 回覆，避免 Runtime 重算。
+- 正確與未能判斷都依 Runtime advance/complete directive；未能判斷顯示中性訊息。瀏覽器只呈現結果，不判分。
+- 本機驗收使用 Windows 11 + Docker Desktop/WSL2、隔離 Compose project `lk-pr2-20261012`、`http://localhost:8081` 與隔離資料庫 `data/pr2-feedback-20261012/learning-kernel.sqlite3`；既有主資料庫保留。
+- 驗收：unittest 17 passed、Node check、Python compileall、Ruff、diff check 通過；canonical evaluator 三種 verdict 均已直接核對。真實瀏覽器完成單選錯誤後重試答對、多選連錯兩次後答對；兩輪流程合計 SQLite 10 observation / 10 attempt chain / 10 trusted evidence / 10 response-cache entries，ordinal/count/retryCount 逐次為 1/1/0、2/2/1，以及 1/1/0、2/2/1、3/3/2。Runtime restart 後 readiness 與十筆記錄仍可讀；先前 exact HTTP replay 實測回傳快取 response，未增加紀錄。
+- PR #2 尚待建立 Draft PR／使用者體驗；不得合併。NAS 正式部署及備份／還原未驗收。
 
 ## 已有環境和已驗證事實
 
@@ -33,9 +43,8 @@
 
 ## 後續工作
 
-1. 暫停 PR #1 merge；先確認 GitHub 對舊 SHA 可達物件的清理／保留方式，再重新檢查 API 可達性、PR diff 與 mergeability。不得宣稱舊外部快取已清除。
-2. 隱私風險解除並合併 PR #1 後，下一階段才是 PR #2「LK Trusted Evaluation Feedback + Retry」：LK 判斷正誤，百煉只呈現結果；錯題可再次挑戰；保留正確 Attempt Chain/Evidence；前端不接觸答案或判分規則。本次未建立或開始 PR #2。
-3. 其他科目、學習摘要、專項/自訂模式保持尚未開放；FnOS/NAS 部署、存取邊界與 SQLite 備份仍未驗收。
+1. 建立並推送 PR #2 Draft，提供 `http://localhost:8081` 給使用者體驗；不合併，等使用者決定。
+2. 其他科目、學習摘要、專項/自訂模式保持尚未開放；FnOS/NAS 部署、存取邊界與 SQLite 備份仍未驗收。
 
 ## 重要檔案與參考
 
@@ -46,4 +55,4 @@
 
 ## 目前成功標準
 
-本機數學 U1 的 Docker、seed、Surface、兩步 raw-observation 瀏覽器流程、SQLite 持久化與 11 項 unittest 都已通過。PR #1 目前 refs 的提交身分已修正，但舊 SHA 仍由 GitHub API 提供非 noreply metadata，故仍 BLOCKED；其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
+本機數學 U1 的 Docker、seed、Surface、單選與多選錯題重試、Attempt Chain/Evidence lineage、exact-request replay 與 SQLite 重啟保存均已通過。PR #2 等使用者體驗，尚未合併；其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
