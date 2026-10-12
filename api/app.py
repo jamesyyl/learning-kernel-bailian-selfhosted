@@ -85,6 +85,20 @@ class _RuntimeRequestHandler(BaseHTTPRequestHandler):
         if parsed.path == "/internal/healthz":
             self._send(200, b"ok\n", {"content-type": "text/plain; charset=utf-8"})
             return
+        if parsed.path == "/internal/readyz":
+            try:
+                response = asyncio.run(
+                    self.server.runtime_service.handle_request(  # type: ignore[attr-defined]
+                        method="GET",
+                        path="/api/ready",
+                    )
+                )
+            except Exception:
+                _LOGGER.exception("Runtime readiness check failed")
+                self._send(*_json_error(503, "runtime_unavailable"))
+                return
+            self._send(response.status, response.body, response.headers)
+            return
         if not _learner_route_allowed(self.command, parsed.path):
             self._send(*_json_error(404, "not_found"))
             return
@@ -163,6 +177,12 @@ def main() -> None:
     if str(sdk_root) not in sys.path:
         sys.path.insert(0, str(sdk_root))
 
+    binding_secret = os.environ["BAILIAN_SERVICE_BINDING_SECRET"]
+    from apps.runtime_vnext.worker.runtime_http import is_valid_service_binding_secret
+
+    if not is_valid_service_binding_secret(binding_secret, binding_secret):
+        raise ValueError("BAILIAN_SERVICE_BINDING_SECRET must contain at least 32 bytes.")
+
     database_path = Path(os.environ.get("LK_DATABASE_PATH", "/data/learning-kernel.sqlite3"))
     database_path.parent.mkdir(parents=True, exist_ok=True)
     database = SqliteD1Database.open(database_path)
@@ -173,14 +193,9 @@ def main() -> None:
         )
     )
     try:
+        service = _runtime_service(database)
         revision = apply_runtime_migrations(database.connection, migrations)
         _LOGGER.info("SQLite Runtime schema ready at revision %s", revision)
-        binding_secret = os.environ["BAILIAN_SERVICE_BINDING_SECRET"]
-        from apps.runtime_vnext.worker.runtime_http import is_valid_service_binding_secret
-
-        if not is_valid_service_binding_secret(binding_secret, binding_secret):
-            raise ValueError("BAILIAN_SERVICE_BINDING_SECRET must contain at least 32 bytes.")
-        service = _runtime_service(database)
         host = os.environ.get("LK_RUNTIME_HOST", "0.0.0.0")
         port = int(os.environ.get("LK_RUNTIME_PORT", "8000"))
         server = create_server(
