@@ -50,4 +50,4 @@ Set `BAILIAN_DATA_PATH` to a NAS directory outside the checkout, for example `/v
 
 ## Next integration gate
 
-See [the ordered Dockerization TODO](docs/DOCKERIZATION_TODO.md). The next product gate is an accepted Pack plus exact-release, validated Activity Pool supply; the SDK's U1 supply Gate B is still open. Only after that can the shell render a real LK Surface and submit raw observations. Add encrypted scheduled backups and verify restore before moving the data directory to FnOS. The browser boundary must not submit trusted evaluation results or invent learner-state rules.
+See [the ordered Dockerization TODO](docs/DOCKERIZATION_TODO.md). The next product gate is an accepted Pack plus exact-release, validated Activity Pool supply; the SDK's U1 supply Gate B is still open. Only after that can the shell render a real LK Surface and submit raw observations. Keep the SQLite data directory outside the checkout on FnOS. Local network use and LK wiring are the immediate priorities; backups can be added after the learning loop works. The browser boundary must not submit trusted evaluation results or invent learner-state rules.
