@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#071731">
-  <title>百煉｜學習者介面方向 2</title>
+  <title>百煉｜數學 U1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -30,6 +30,7 @@
 @media(max-width:640px){#homeSubjects.subject-picker{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:12px}#homeSubjects .subject-tab{min-height:76px;padding:9px 5px;border-radius:15px;font-size:14px}#homeSubjects .subject-tab i{font-size:22px}#homeSubjects .subject-tab:last-child{grid-column:2}}
 
 </style>
+  <link rel="stylesheet" href="/app.css">
 </head>
 <body>
   <header class="topbar">
@@ -60,7 +61,7 @@
   </header>
 
   <main class="app-main">
-    <div class="prototype-note" role="note"><i class="ph ph-info" aria-hidden="true"></i><span>互動原型・示範內容，未連接 LK，不會保存學習紀錄</span></div>
+    <div class="prototype-note" role="note"><i class="ph ph-info" aria-hidden="true"></i><span>本機數學 U1 已接通 LK Runtime；其他科目與學習摘要尚未開放</span></div>
 
     <section class="view is-active" id="today" aria-labelledby="homeHeading">
       <h1 class="visually-hidden" id="homeHeading">今日學習活動</h1>
@@ -206,5 +207,6 @@ $('#startRecommended').addEventListener('click',()=>openMode('learn'));
 renderSubjectTabs();renderHome();renderJourney();renderParent();renderStories();
 
 </script>
+  <script src="/app.js" defer></script>
 </body>
 </html>

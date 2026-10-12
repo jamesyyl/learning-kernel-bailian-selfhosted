@@ -13,22 +13,27 @@
 ## 已有環境和已驗證事實
 
 - 使用者工作目錄先前是 `/mnt/c/Users/jamesyyliao/learning-kernel-bailian-selfhosted`。先 `pwd`、`git status -sb`、`git branch --show-current`，保留任何本機未提交修改；確認目錄存在後再操作。
-- Docker 29.8.2／Compose 5.5.1／Engine 29.8.2 在 WSL 可用；原兩個服務已 build 且 healthy。`http://localhost:8080/healthz` 回 `ok`；`/api/ready` 回 `ready:true`、schema revision 4。瀏覽器 `/#today` 首頁載入正常。
-- `python3 -m unittest discover -s tests -v` 在使用者本機為 11 passed，0 skipped（在新增 U1 seed 之前）。
+- Docker 29.8.2／Compose 5.5.1／Engine 29.8.2 在 WSL 可用。2026-10-12 實際執行 `docker compose up -d --build`，兩個服務 healthy；`/healthz`、`/api/ready` 均 HTTP 200，schema revision 4。
+- `python3 -m unittest discover -s tests -v`：11 passed，0 skipped；`node --check web/app.js` 和 `git diff --check` 通過。
 - 私有 `vendor/learning-kernel-sdk` 鎖在 `b63404173e39a37685e9914523ba3704ac1664ad`。最初 HTTPS submodule 因 GitHub 密碼登入失敗，後來使用者已成功初始化並跑完 SDK migration 測試。若目前未初始化，先檢查本機 Git 認證／submodule 狀態，不要請使用者貼 token。不要任意改 submodule 指向。
-- Dockerfile.runtime 已加入 U1 Pack artifact 複製；`api/seed_u1.py` 是最近加入的本機種子命令，**只做了 Python 語法檢查，尚未在使用者 Docker 實跑**。它按 SDK `tests/test_runtime_vnext_d1_pack_control.py` 的驗證樣本安裝 U1 0.3.1、啟用 `local-learner-001/home`、加入分類與整除兩個 Pool entry，最後檢查 Surface 200。若失敗，就用 SDK 測試及實際錯誤修正，不要因文件敘述當成已通過。
+- Dockerfile.runtime 已加入 U1 Pack artifact 複製；`api/seed_u1.py` 已在使用者 Docker 實跑並證明可重複執行。首次及再次執行都安裝/確認 U1 0.3.1、啟用 `local-learner-001/home`、加入分類與整除兩個 Pool entry，並自查 Surface 200。
 - Runtime HTTP host `api/app.py` 僅讓同源 Nginx 代理過來的 Surface 與 raw observations 通過；Pack 安裝／Pool admission 是 seed CLI 在容器內直接呼叫 SDK service，不要讓網頁呼叫管理 API。現有服務綁定配置已運作，無須為本任務重設加密方案。
-- `web/index.html` 是約 2.5 MB 的原始單頁，含大量內嵌圖像；現有 JS 的科目與出題／提交邏輯是展示資料。修改時盡量保留基線，可選擇獨立 JS 模組並在 HTML 引入。先讀實際結構，再決定最小改動。
+- `web/index.html` 是約 2.5 MB 的原始單頁，含大量內嵌圖像；保留 Option 2 外觀，Runtime 接線放在 `web/app.js`、`web/app.css`。Math U1 已從真正 Surface 渲染並提交 raw observations；未接通科目、成長/家長摘要、專項/自訂模式標示尚未開放。
 - `data/learning-kernel.sqlite3` 是持久資料；不可刪除、覆寫或用 `docker compose down -v`。資料從先前只建立 schema 開始，seed 之後可能有內容。先看 `git status`，不要清掉使用者資料。
 
-## 建議執行順序（請自主推進）
+## 已完成的本機驗收（2026-10-12）
 
-1. 在既有 checkout 更新此分支（先確認無未提交修改），`git submodule status`；必要時 `git submodule update --init --recursive`。檢查 `.env` 已設，不輸出密鑰。
-2. `docker compose up -d --build`，接著 `docker compose exec runtime python -m api.seed_u1`。若有 traceback，依 pinned SDK 的 Pack control tests 修正 seed；重跑驗證冪等性，至少首次與第二次都成功。注意 SQLite 已存在，保留資料。
-3. 確認同源 `POST /api/learners/local-learner-001/environments/home/packs/org.learning-kernel.tw-math-g6-u1/surface` 能從 Nginx 返回真正的 `learning-kernel.surface-ir@1`。Surface request 可參考 `api/seed_u1.py` 的 `currentContext` 與 SDK 測試 `_surface_request`。檢查回傳 payload 的實際 schema、活動步驟和 lineage。
-4. 把 Option 2 練習互動接上真實 Surface：數學 U1 路徑載入，渲染支援的步驟與選項，完成作答；使用正式 raw observation 端點與 SDK 契約記錄提交。不要把 trusted evaluation 或正確答案放入瀏覽器。若某些 UI 功能無 Runtime 契約，清楚顯示尚未開放，優先讓一條完整練習路徑可用。
-5. 用本機瀏覽器實際點過首頁→數學 U1→出題→作答→提交→重新整理／重新進入，核對 Runtime／SQLite 紀錄。測試真正風險點，修復錯誤；更新 README/TODO 的驗收事實。若有用戶資料，使用可辨識的測試 learner 或記錄測試行為，不要為測試刪正式資料。
-6. 將程式及文件 commit/push 到本分支與草稿 PR #1。不要 merge、不要觸發 Actions。若 GitHub 認證阻擋 push，先完成本機可執行成果，說明具體阻擋及待推 commit。
+- `docker compose up -d --build` 成功；`api.seed_u1` 首次與再次執行成功；Nginx 同源 Surface 回真正的 `learning-kernel.surface-ir@1`，含兩個 reportable observation points。
+- 本機瀏覽器完成首頁 → Math U1 → 單選 → raw observation → 多選 → raw observation → Runtime complete。頁面只顯示 Runtime 中性保存訊息，不做本機判分；重啟 Runtime 後可重新載入活動。
+- SQLite 中有 4 筆 observation、4 條 attempt chain、4 筆 evidence。這是完整兩步練習加上驗證過程中的兩筆部分練習紀錄；資料已跨 Runtime restart 保留，**不要清除**。
+- 已確認英文等未接通科目、成長摘要及家長摘要都顯示尚未開放；專項/自訂入口停用。
+
+## 後續工作
+
+1. 擴充 Math U1 題目覆蓋前，沿用 pinned SDK Surface 和 observation 契約；完成後仍需逐步在本機瀏覽器驗收。
+2. 其他科目、學習摘要、專項/自訂模式尚未接通，繼續保持尚未開放狀態，不顯示推算進度。
+3. FnOS/NAS、區網存取邊界及備份是獨立後續項目，不阻擋本機數學 U1 使用。
+4. 本次程式與文件已在本機 commit；WSL `git push` 因缺少 GitHub Username/write 認證而未完成，draft PR #1 的遠端 head 尚未更新。認證可用後推送到 `feat/option2-docker-shell` 並確認 PR head；不要 merge，也不要主動觸發 GitHub Actions。
 
 ## 重要檔案與參考
 
@@ -39,4 +44,4 @@
 
 ## 目前成功標準
 
-本地 Docker 可重建；seed 首次和重跑成功；`/healthz`、`/api/ready` 正常；網頁透過同源 API 顯示一題真正來自 U1 Pack 的數學活動並可提交 raw observation；重開頁面仍能確認 Runtime 紀錄存在；既有 11 項測試與必要的新整合檢查通過。未完成的 UI／科目／FnOS 項目如實列出，先交付這條可用的垂直流程。
+本機數學 U1 的 Docker、seed、Surface、兩步 raw-observation 瀏覽器流程、SQLite 持久化與 11 項 unittest 都已通過。其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。

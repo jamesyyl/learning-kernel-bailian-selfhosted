@@ -14,10 +14,10 @@
 |---|---|---|---|
 | 0 | 將指定 HTML 放進新 repo，保留原檔 | 完成 | HTML 原樣保留；後續功能修改以它為基線。 |
 | 1 | 建立 Nginx＋Python Runtime 的 Compose 底座 | 完成 | 同源代理；Python 載入固定 SDK；SQLite 可另設資料目錄；瀏覽器不能呼叫 Pack 管理或 trusted returns。 |
-| 2 | Windows 11＋WSL2 建置和 Runtime 驗收 | 本機通過（2026-10-12） | Docker 29.8.2、Compose 5.5.1；兩個映像成功建置，web/runtime containers healthy；`/healthz` 回 `ok`；Runtime restart 後 readiness 為 schema revision 4，`data/learning-kernel.sqlite3` 存在（4096 bytes）；完整 unittest 11 項全通過、0 skipped；瀏覽器成功載入 `http://localhost:8080/#today`，首頁畫面確認正常。 |
-| 3 | 準備 U1 Pack 與合法 Activity Pool 供應 | 進行中 | 已新增 `python -m api.seed_u1`，沿 SDK 測試範例安裝 U1 0.3.1 與兩個 Pool Entry，並自查 Surface；待 WSL Docker 實跑驗收。完整題目覆蓋後續擴充。 |
-| 4 | 把 Option 2 練習頁接到 LK | 未完成，依賴 3 | 用 Runtime Surface IR 顯示活動；只送 raw observation；不在瀏覽器判分。LK 尚未供應的科目如實顯示未開放；保留三種模式與 Learning Journey，但不造假進度。 |
-| 5 | NAS 持久化與存取邊界 | 未完成 | SQLite 放在 repo 外的 FnOS 資料夾；先只供家中網路／既有 Tailscale；不做路由器埠轉發。此版沒有帳號登入。 |
+| 2 | Windows 11＋WSL2 建置和 Runtime 驗收 | 本機通過（2026-10-12） | Docker 29.8.2、Compose 5.5.1；兩個映像成功建置，web/runtime containers healthy；`/healthz` 回 `ok`；Runtime restart 後 readiness 為 schema revision 4，`data/learning-kernel.sqlite3` 存在（4096 bytes）；完整 unittest 11 項全通過、0 skipped；首頁基礎載入確認。完整學習流程記錄於第 4 項。 |
+| 3 | 準備 U1 Pack 與合法 Activity Pool 供應 | 本機通過（2026-10-12） | WSL Docker build 後，`docker compose exec runtime python -m api.seed_u1` 首次及再次執行皆成功；同源 Surface HTTP 200、schema `learning-kernel.surface-ir@1`、Pack 0.3.1。 |
+| 4 | 把 Option 2 練習頁接到 LK | 程式已寫；本機瀏覽器通過（2026-10-12） | 首頁選數學 U1、載入真實 Surface、完成單選及多選兩步、每步收到 Runtime 保存回覆；頁面只送 raw observation，沒有瀏覽器判分。未接通科目與學習摘要標示尚未開放。 |
+| 5 | NAS 持久化與存取邊界 | 未驗證（不阻擋本機使用） | 本機 bind mount 的 SQLite 已保存 observation/attempt/evidence，Runtime 重啟後計數不變；FnOS/NAS 路徑、區網存取與正式部署仍待另行驗收。此版沒有帳號登入。 |
 | 6 | 簡單 SQLite 備份（後置） | 暫緩，不阻擋開發 | 先完成 LK 活動與作答流程；有正式學習資料後，再加入本機資料庫快照和還原。 |
 | 7 | FnOS/N100 驗收 | 未完成，依賴 2–5 | linux/amd64 冷啟、重啟、資料保存、raw observation 通過；備份後續補上。 |
 
@@ -29,7 +29,12 @@
 - Windows 11＋WSL2 完整 unittest：11 項通過、0 skipped；已包含 pinned SDK migration 測試。
 - Windows 11＋WSL2 實際 Docker Compose build、Runtime/web health、readiness 與 restart 後資料檔檢查通過。
 - 使用者提供的瀏覽器截圖確認 Option 2 首頁可在 `localhost:8080/#today` 顯示；按鈕與導覽流程尚未逐項驗收。
+- 2026-10-12 在 WSL Docker 首次和重複執行 Math U1 seed 均成功；`/healthz`、`/api/ready` HTTP 200，readiness schema revision 4。
+- 經 `http://localhost:8080` 的 Nginx 同源代理取得真正 Surface IR，schema 為 `learning-kernel.surface-ir@1`，包含兩個 reportable observation points。
+- 本機瀏覽器完成 U1 的 2 個觀察步驟；單選提示及多選作答按 SDK 契約提交 raw observation，Runtime 回覆 advance/complete 與中性保存訊息。
+- 驗證期間共保存 4 筆 observation、4 條 attempt chain、4 筆 evidence（完整活動 2 筆，另有修正過程中的 2 筆部分活動紀錄）。Runtime 重啟與重新進入後資料仍在；未清除 SQLite。
+- 專案 unittest：11 passed、0 skipped；`node --check web/app.js` 與 `git diff --check` 通過。
 
 ## 目前不可用的部分
 
-Option 2 仍是示範頁，沒有呼叫 Runtime，也不保存學習資料。首頁畫面已確認可載入，但互動流程尚未逐項驗收。已提供本機 U1 種子命令，尚待 WSL Docker 實跑驗證；網頁尚未接 Surface 或 raw observation，不能宣稱可在網頁完成真實練習。FnOS 驗收仍待完成；備份後置。PR 維持 draft，不供孩子作正式學習使用。
+本機 Math U1 練習已可用；其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime，頁面明確標為尚未開放。更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。PR 維持 draft。
