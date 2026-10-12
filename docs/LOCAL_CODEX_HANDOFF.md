@@ -1,6 +1,6 @@
 # 本地 Codex 交接：Option 2 自架開發
 
-更新：2026-10-12。這份文件記錄 PR #1 最終驗收與後續交接。工作 repo：`jamesyyl/learning-kernel-bailian-selfhosted`，分支 `feat/option2-docker-shell`，PR #1 的 main 初始提交與 feature branch 23 個提交已改用 GitHub noreply。Windows 11／WSL2 本機 Docker、Runtime、Math U1 瀏覽器流程與 SQLite restart persistence 已通過；改寫前後 tree 與 PR diff 相同。開始新工作前先 fetch 並查看 GitHub PR 的最新狀態。
+更新：2026-10-12。這份文件記錄 PR #1 最終驗收與後續交接。工作 repo：`jamesyyl/learning-kernel-bailian-selfhosted`，分支 `feat/option2-docker-shell`。目前 main／feature refs 的 commit Author/Committer 已改用 GitHub noreply；改寫前後 tree 與 PR diff 相同。不過 GitHub Commit API 仍可讀取改寫前的 main 與 feature SHA，回傳舊 metadata，因此 PR #1 仍為 Draft、未合併。開始新工作前先 fetch 並查看 GitHub PR 的最新狀態。
 
 ## 使用者決定與目標
 
@@ -29,11 +29,13 @@
 - 已確認英文等未接通科目、成長摘要及家長摘要都顯示尚未開放；專項/自訂入口停用。
 - Windows 11＋WSL2 Ubuntu-24.04：Compose build/up、Math U1 seed 首次及重複執行、`/healthz`、`/api/ready`、Python compileall、Node check、`git diff --check` 與完整 unittest 11 項均通過；兩服務 healthcheck healthy。PR 無已回報的必要 GitHub checks。
 - GitHub 原本只有 main 與 feature branch、PR #1 一筆 open PR、0 筆 deployment，沒有 Actions workflow；本次只更新這兩條分支。
+- 隱私殘留：舊 main SHA `8b1555205e7b` 與舊 feature head `f2acdcdcd25a` 仍可由 GitHub Commit API 讀取，回傳非 noreply metadata；未宣稱舊提交或外部快取已徹底清除。依本次條件不改 Ready、不合併。
 
 ## 後續工作
 
-1. 完成 PR #1 的 GitHub 最終狀態核對與 squash merge 後，下一階段才是 PR #2「LK Trusted Evaluation Feedback + Retry」：LK 判斷正誤，百煉只呈現結果；錯題可再次挑戰；保留正確 Attempt Chain/Evidence；前端不接觸答案或判分規則。本次未建立或開始 PR #2。
-2. 其他科目、學習摘要、專項/自訂模式保持尚未開放；FnOS/NAS 部署、存取邊界與 SQLite 備份仍未驗收。
+1. 暫停 PR #1 merge；先確認 GitHub 對舊 SHA 可達物件的清理／保留方式，再重新檢查 API 可達性、PR diff 與 mergeability。不得宣稱舊外部快取已清除。
+2. 隱私風險解除並合併 PR #1 後，下一階段才是 PR #2「LK Trusted Evaluation Feedback + Retry」：LK 判斷正誤，百煉只呈現結果；錯題可再次挑戰；保留正確 Attempt Chain/Evidence；前端不接觸答案或判分規則。本次未建立或開始 PR #2。
+3. 其他科目、學習摘要、專項/自訂模式保持尚未開放；FnOS/NAS 部署、存取邊界與 SQLite 備份仍未驗收。
 
 ## 重要檔案與參考
 
@@ -44,4 +46,4 @@
 
 ## 目前成功標準
 
-本機數學 U1 的 Docker、seed、Surface、兩步 raw-observation 瀏覽器流程、SQLite 持久化與 11 項 unittest 都已通過。PR #1 的提交身分已修正；其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
+本機數學 U1 的 Docker、seed、Surface、兩步 raw-observation 瀏覽器流程、SQLite 持久化與 11 項 unittest 都已通過。PR #1 目前 refs 的提交身分已修正，但舊 SHA 仍由 GitHub API 提供非 noreply metadata，故仍 BLOCKED；其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。

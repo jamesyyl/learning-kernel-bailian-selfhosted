@@ -39,4 +39,4 @@
 
 ## 目前不可用的部分
 
-本機 Math U1 已能出題與保存作答，但答對與答錯目前都只顯示中性保存訊息；LK Trusted Evaluation Feedback + Retry 留給 PR #2，本次未開始。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime，頁面明確標為尚未開放。更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。PR #1 的 main 初始提交及 feature branch 23 個提交已改用 GitHub noreply；改寫前後 tree 與 PR diff 相同，後續狀態以 GitHub PR 為準。
+本機 Math U1 已能出題與保存作答，但答對與答錯目前都只顯示中性保存訊息；LK Trusted Evaluation Feedback + Retry 留給 PR #2，本次未開始。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime，頁面明確標為尚未開放。更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。PR #1 的目前 main／feature refs 已改用 GitHub noreply；改寫前後 tree 與 PR diff 相同。不過 GitHub Commit API 仍能讀取改寫前的 main 與 feature SHA，回傳舊的非 noreply metadata，因此 PR #1 保持 Draft、暫不合併。
