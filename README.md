@@ -56,6 +56,10 @@ The shell uses Google Fonts and Phosphor Icons from their public CDNs. The main 
 
 Set `BAILIAN_DATA_PATH` to a NAS directory outside the checkout, for example `/vol1/docker/bailian-selfhosted/data`, and create that directory before starting Compose. SQLite lives at `learning-kernel.sqlite3` in that directory. Do not configure router port forwarding: this first version has no user login and is intended for the trusted home network or existing Tailscale network.
 
+## Continue development locally
+
+For the full WSL Codex handoff, current evidence, and the next end-to-end Math U1 task, read [docs/LOCAL_CODEX_HANDOFF.md](docs/LOCAL_CODEX_HANDOFF.md).
+
 ## Next integration gate
 
 See [the ordered Dockerization TODO](docs/DOCKERIZATION_TODO.md). The immediate product step is to connect the Option 2 practice page to the local U1 Surface and raw observation endpoints. The seed command supplies one compound U1 activity; broader U1 coverage is a later expansion. Keep the SQLite data directory outside the checkout on FnOS. Local network use and LK wiring are the immediate priorities; backups can be added after the learning loop works. The browser boundary must not submit trusted evaluation results or invent learner-state rules.
