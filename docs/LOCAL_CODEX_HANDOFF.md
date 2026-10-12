@@ -1,6 +1,6 @@
 # 本地 Codex 交接：Option 2 自架開發
 
-更新：2026-10-12。這份文件是下一位在使用者 Windows 11／WSL2 Ubuntu 24.04 本機操作的 Codex 的起點。工作 repo：`jamesyyl/learning-kernel-bailian-selfhosted`，分支 `feat/option2-docker-shell`，草稿 [PR #1](https://github.com/jamesyyl/learning-kernel-bailian-selfhosted/pull/1)。先讀本文件、`README.md`、`docs/DOCKERIZATION_TODO.md`、程式及 SDK 的相關測試；以實際本機執行結果更新狀態。
+更新：2026-10-12。這份文件記錄 PR #1 最終驗收與後續交接。工作 repo：`jamesyyl/learning-kernel-bailian-selfhosted`，分支 `feat/option2-docker-shell`，PR #1 的 main 初始提交與 feature branch 23 個提交已改用 GitHub noreply。Windows 11／WSL2 本機 Docker、Runtime、Math U1 瀏覽器流程與 SQLite restart persistence 已通過；改寫前後 tree 與 PR diff 相同。開始新工作前先 fetch 並查看 GitHub PR 的最新狀態。
 
 ## 使用者決定與目標
 
@@ -8,7 +8,7 @@
 - 新 repo 與原 `learning-kernel-bailian` 分離；SDK 以固定私有 submodule 引入。不要為了此任務更改原 repo 或 SDK 上游。
 - 優先完成能在本機瀏覽器實際使用的數學 U1 出題、作答、原始觀察紀錄與再次讀取流程，然後再擴張。個人使用、家中區域網；加密、雲端／每日備份、登入、GitHub Actions、額外部署流程都不是當前門檻。不要因這些議題卡住功能開發。
 - 不要假稱其他科目已有 LK 支援。未供應的活動可清楚標示尚未開放；不要用網頁內假進度、假判分替代 Runtime 結果。
-- 不要求使用者每一步貼輸出給遠端代理。本地 Codex 可以直接在 WSL 執行、修正、驗證、提交分支；完成後簡短交代結果與剩餘事項。不要擅自合併 PR。
+- 不要求使用者每一步貼輸出給遠端代理。本地 Codex 可以直接在 WSL 執行、修正與驗證。PR #1 的提交身分隱私修正已依使用者授權處理；main 與 feature branch 的程式碼樹保持一致，原提交訊息、名稱、時間戳及祖先關係保留。
 
 ## 已有環境和已驗證事實
 
@@ -25,15 +25,15 @@
 
 - `docker compose up -d --build` 成功；`api.seed_u1` 首次與再次執行成功；Nginx 同源 Surface 回真正的 `learning-kernel.surface-ir@1`，含兩個 reportable observation points。
 - 本機瀏覽器完成首頁 → Math U1 → 單選 → raw observation → 多選 → raw observation → Runtime complete。頁面只顯示 Runtime 中性保存訊息，不做本機判分；重啟 Runtime 後可重新載入活動。
-- SQLite 中有 4 筆 observation、4 條 attempt chain、4 筆 evidence。這是完整兩步練習加上驗證過程中的兩筆部分練習紀錄；資料已跨 Runtime restart 保留，**不要清除**。
+- 最新驗收後 SQLite 中共有 14 筆 observation、14 條 attempt chain、14 筆 trusted evidence。Runtime restart 後 schema revision 仍為 4，三類資料筆數皆為 14；**不要清除**。
 - 已確認英文等未接通科目、成長摘要及家長摘要都顯示尚未開放；專項/自訂入口停用。
+- Windows 11＋WSL2 Ubuntu-24.04：Compose build/up、Math U1 seed 首次及重複執行、`/healthz`、`/api/ready`、Python compileall、Node check、`git diff --check` 與完整 unittest 11 項均通過；兩服務 healthcheck healthy。PR 無已回報的必要 GitHub checks。
+- GitHub 原本只有 main 與 feature branch、PR #1 一筆 open PR、0 筆 deployment，沒有 Actions workflow；本次只更新這兩條分支。
 
 ## 後續工作
 
-1. 擴充 Math U1 題目覆蓋前，沿用 pinned SDK Surface 和 observation 契約；完成後仍需逐步在本機瀏覽器驗收。
-2. 其他科目、學習摘要、專項/自訂模式尚未接通，繼續保持尚未開放狀態，不顯示推算進度。
-3. FnOS/NAS、區網存取邊界及備份是獨立後續項目，不阻擋本機數學 U1 使用。
-4. 本次程式與驗收文件已推送到 `feat/option2-docker-shell`，draft PR #1 已更新且維持 draft；未 merge，也未觸發 GitHub Actions。
+1. 完成 PR #1 的 GitHub 最終狀態核對與 squash merge 後，下一階段才是 PR #2「LK Trusted Evaluation Feedback + Retry」：LK 判斷正誤，百煉只呈現結果；錯題可再次挑戰；保留正確 Attempt Chain/Evidence；前端不接觸答案或判分規則。本次未建立或開始 PR #2。
+2. 其他科目、學習摘要、專項/自訂模式保持尚未開放；FnOS/NAS 部署、存取邊界與 SQLite 備份仍未驗收。
 
 ## 重要檔案與參考
 
@@ -44,4 +44,4 @@
 
 ## 目前成功標準
 
-本機數學 U1 的 Docker、seed、Surface、兩步 raw-observation 瀏覽器流程、SQLite 持久化與 11 項 unittest 都已通過。其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
+本機數學 U1 的 Docker、seed、Surface、兩步 raw-observation 瀏覽器流程、SQLite 持久化與 11 項 unittest 都已通過。PR #1 的提交身分已修正；其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
