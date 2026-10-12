@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/opt/lk:/app \
+    LK_SDK_ROOT=/opt/lk \
+    LK_RUNTIME_MIGRATIONS_DIR=/opt/lk/apps/runtime_vnext/migrations \
+    LK_DATABASE_PATH=/data/learning-kernel.sqlite3
+
+WORKDIR /app
+
+COPY api/ /app/api/
+COPY vendor/learning-kernel-sdk/learning_kernel/ /opt/lk/learning_kernel/
+COPY vendor/learning-kernel-sdk/apps/runtime_vnext/worker/ /opt/lk/apps/runtime_vnext/worker/
+COPY vendor/learning-kernel-sdk/apps/runtime_vnext/migrations/ /opt/lk/apps/runtime_vnext/migrations/
+
+RUN mkdir -p /data
+
+EXPOSE 8000
+
+CMD ["python", "-m", "api.app"]

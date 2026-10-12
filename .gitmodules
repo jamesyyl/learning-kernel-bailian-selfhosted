@@ -1,0 +1,3 @@
+[submodule "vendor/learning-kernel-sdk"]
+	path = vendor/learning-kernel-sdk
+	url = https://github.com/jamesyyl/learning-kernel-sdk.git

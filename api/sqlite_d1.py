@@ -81,6 +81,11 @@ class SqliteD1Database:
         self._connection.execute("PRAGMA busy_timeout = 5000")
         self._lock = asyncio.Lock()
 
+    @property
+    def connection(self) -> sqlite3.Connection:
+        """Expose the connection for startup-only schema migration work."""
+        return self._connection
+
     @classmethod
     def open(cls, path: str | Path) -> SqliteD1Database:
         connection = sqlite3.connect(path, check_same_thread=False, isolation_level=None)

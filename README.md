@@ -4,25 +4,35 @@ An isolated self-hosted home for the new Bailian learner shell. The starting UI 
 
 ## Current stage
 
-The supplied static shell is packaged as a Linux/amd64 Docker Compose service. A small SQLite adapter now covers the D1-shaped prepared-statement calls used by the vNext Runtime glue, including atomic batches. A migration runner tracks exact migration checksums and rejects edits to migrations that have already been applied.
+The supplied static shell and a Python Runtime host are packaged as separate Linux/amd64 Compose services. The Python host loads the canonical vNext Runtime glue from the pinned SDK submodule and gives it a SQLite adapter for prepared statements and atomic batches. The migration runner records exact checksums and rejects edits to migrations that have already been applied.
 
-The four current vNext Runtime SQL migrations were applied to SQLite 3.53.1 during development; they created schema revision 4. The adapter and migration runner have focused local tests.
+The SDK's four vNext Runtime SQL migrations were applied to SQLite 3.53.1 during development; they created schema revision 4. The adapter, migration runner, and learner-route allowlist have focused local tests.
 
-This is storage groundwork only. The HTML remains a demonstration UI: it does not call LK or persist learner data. The SQLite adapter is not yet connected to `VNextRuntimeService`, and Compose still runs only the static web container. Do not use this stage for real learning records.
+The HTML remains a demonstration UI: it does not call LK or persist learner data. No Pack is installed or activated yet, and Docker image build has not been run in this environment. Do not use this stage for real learning records.
 
 The original `learning-kernel-bailian` repository and the canonical `learning-kernel-sdk` remain separate and are not changed by this project.
 
+The self-hosted Runtime consumes the SDK through a pinned Git submodule at `b63404173e39a37685e9914523ba3704ac1664ad`; cloning for a Runtime build requires read access to that private repository. No SDK source is copied into this repository.
+
 ## Run locally
 
-1. Copy `.env.example` to `.env` if you want to customize the port.
-2. Start the service:
+1. Clone with the SDK submodule initialized (the GitHub account needs read access to `learning-kernel-sdk`):
+
+   ```sh
+   git clone --recurse-submodules https://github.com/jamesyyl/learning-kernel-bailian-selfhosted.git
+   ```
+
+2. Copy `.env.example` to `.env`.
+3. Generate a secret with `openssl rand -hex 32` and paste it into `BAILIAN_SERVICE_BINDING_SECRET` in `.env`.
+4. Keep `BAILIAN_ORIGIN` equal to the exact origin used in the browser, including scheme and port. For NAS access, replace the local default with the NAS/Tailscale URL.
+5. Start the services:
 
    ```sh
    docker compose up -d --build
    ```
 
-3. Open <http://localhost:8080> (or the configured port).
-4. Check service health at <http://localhost:8080/healthz>.
+6. Open <http://localhost:8080> (or the configured address).
+7. Check web health at <http://localhost:8080/healthz> and Runtime schema status at <http://localhost:8080/api/ready>.
 
 Stop it with:
 
@@ -34,8 +44,8 @@ The shell uses Google Fonts and Phosphor Icons from their public CDNs. The main 
 
 ## NAS
 
-The Compose project uses its own service and image names. It has no database volume yet because the Runtime is not connected. Do not configure router port forwarding for this service; use the home network or the existing Tailscale network.
+Set `BAILIAN_DATA_PATH` to a NAS directory outside the checkout, for example `/vol1/docker/bailian-selfhosted/data`, and create that directory before starting Compose. SQLite lives at `learning-kernel.sqlite3` in that directory. Do not configure router port forwarding: this first version has no user login and is intended for the trusted home network or existing Tailscale network.
 
 ## Next integration gate
 
-Pin the canonical SDK source, compose the existing vNext Runtime service over this SQLite adapter, and expose it through a same-origin web proxy. Then wire only the shell actions covered by the accepted Runtime contracts. The self-hosted adapter must not evaluate answers or invent learner-state rules.
+Install and activate the intended Pack through an operator-only path, then wire the shell to the allowlisted Surface and raw-observation routes. Add encrypted scheduled backups and verify restore before moving the data directory to FnOS. The browser boundary must not submit trusted evaluation results or invent learner-state rules.

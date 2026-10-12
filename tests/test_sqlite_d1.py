@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 import unittest
 
@@ -82,6 +83,19 @@ class SqliteD1Tests(unittest.IsolatedAsyncioTestCase):
             "SELECT COUNT(*) AS learner_count FROM learners WHERE learner_id = ?"
         ).bind("should-rollback").first("learner_count")
         self.assertEqual(count, 0)
+
+
+class SqliteD1MultiLoopTests(unittest.TestCase):
+    def test_one_database_can_serve_sequential_http_event_loops(self) -> None:
+        database = SqliteD1Database.open(":memory:")
+        asyncio.run(database.prepare("CREATE TABLE values_table (value INTEGER)").run())
+        asyncio.run(database.prepare("INSERT INTO values_table VALUES (?)").bind(7).run())
+        value = asyncio.run(
+            database.prepare("SELECT value FROM values_table").first("value")
+        )
+        asyncio.run(database.close())
+
+        self.assertEqual(value, 7)
 
 
 if __name__ == "__main__":

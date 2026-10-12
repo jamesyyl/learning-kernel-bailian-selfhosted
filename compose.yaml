@@ -1,6 +1,29 @@
 name: bailian-selfhosted
 
 services:
+  runtime:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    image: bailian-selfhosted-runtime:local
+    environment:
+      BAILIAN_ORIGIN: ${BAILIAN_ORIGIN:-http://localhost:8080}
+      BAILIAN_SERVICE_BINDING_SECRET: ${BAILIAN_SERVICE_BINDING_SECRET:?set a 64-character hex secret in .env}
+    volumes:
+      - "${BAILIAN_DATA_PATH:-./data}:/data"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/internal/healthz', timeout=2)"
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
   web:
     platform: linux/amd64
     build:
@@ -9,6 +32,11 @@ services:
     image: bailian-selfhosted-web:local
     ports:
       - "${BAILIAN_BIND_ADDRESS:-0.0.0.0}:${BAILIAN_PORT:-8080}:80"
+    environment:
+      BAILIAN_SERVICE_BINDING_SECRET: ${BAILIAN_SERVICE_BINDING_SECRET:?set a 64-character hex secret in .env}
+    depends_on:
+      runtime:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
