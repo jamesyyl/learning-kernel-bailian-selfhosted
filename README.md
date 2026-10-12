@@ -16,10 +16,10 @@ The self-hosted Runtime consumes the SDK through a pinned Git submodule at `b634
 
 ## Run locally
 
-1. Clone with the SDK submodule initialized (the GitHub account needs read access to `learning-kernel-sdk`):
+1. Clone the work branch with the SDK submodule initialized (the GitHub account needs read access to `learning-kernel-sdk`):
 
    ```sh
-   git clone --recurse-submodules https://github.com/jamesyyl/learning-kernel-bailian-selfhosted.git
+   git clone --recurse-submodules --branch feat/option2-docker-shell https://github.com/jamesyyl/learning-kernel-bailian-selfhosted.git
    ```
 
 2. Copy `.env.example` to `.env`.
