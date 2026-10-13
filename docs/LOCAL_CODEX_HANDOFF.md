@@ -9,13 +9,13 @@
 - Root 全測試 19 passed；Python compileall、改動檔 Ruff、`node --check web/app.js` 通過。SDK focused regression 181 passed、2 個舊 D1 knowledge-read 測試排除；同兩測試在乾淨 SDK PR #335 基線也失敗。另 7 個 Worker readiness 基線測試亦在乾淨基線失敗；此工作未改 Cloudflare/D1 readiness 實作。未手動啟動 GitHub Actions。
 - 同一 learner 的 Runtime/隔離 SQLite 驗收連續完成 10 個不同 Activity ID／題目；17/17 Places 有 canonical Surface/Evidence；26/26 Map Family exploration 有 Surface/Evidence。證據：`docs/evidence/math-u1-supply-matrix-final-0.3.4.json`、`docs/evidence/math-u1-10-activity-trace.json`。
 - Codex in-app Chromium 真實瀏覽器：看到全 5 Regions／17 Places／37 Roads，並沿 Road 從 U1-2→U1-3→U1-5；單選、多選、multi-classification、整數、結構化質因數分解、文字因數樹均由 Runtime 判定正確。答錯留在同題並可重試；初始題 2 的 LK Next Decision 載入不同題 3。證據：`docs/evidence/math-u1-browser-acceptance-2026-10-14.json`。
-- 驗收用 Python 本機 host 與暫存 SQLite；未操作 Docker 或原工作目錄／SQLite；沒有執行 Actions。
+- 真實瀏覽器使用 Python 本機 host 與暫存 SQLite，已停止並清除暫存資料。Root SQLite 全套測試通過。Docker client 29.8.2／Compose 5.5.1 可用，但 Docker Desktop Linux engine named pipe 不存在；Compose build/up 為 NOT RUN，Docker container acceptance BLOCKED。沒有啟動 Docker，也未改既有 8080/8081/8084、原工作目錄、SQLite 或 volumes；未手動執行 Actions。
 - Root PR #3 保持 Draft，SDK PR #335 保持未合併；合併依賴順序仍是 SDK #335 先於 Root #3。未授權合併。
 - 已快轉推送：SDK branch `codex/u1-classification-transfer-supply` head `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root branch `codex/lk-next-decision-loop` implementation commit `8057a37d78b6cc3c485876ab8f23153a2531e740`。Root gitlink 指向該 SDK SHA。
 
 ## 配對恢復 checkpoints（2026-10-14）
 
-- Root local checkpoint ref `checkpoint/math-u1-selfhosted-20261014` → `2efed1c48506c4531b824ed8dce5431ea0cb6cc6`。
+- Root local checkpoint ref `checkpoint/math-u1-selfhosted-20261014` → `8cafd2122cfd7c0f8aee1801e2f0f2caf88ff833`.
 - SDK local checkpoint ref `checkpoint/math-u1-selfhosted-20261014` → `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root submodule gitlink 指向同一 SDK commit。
 - 兩個 checkpoint refs 是額外本機書籤；原 PR branches 也已快轉推送。Root #3 為 Draft，SDK #335 Open，兩者都未合併。Checkpoint 只保護可恢復狀態，不代表 acceptance PASS。
 - 從已有 clone 恢復：

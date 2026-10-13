@@ -9,6 +9,13 @@
     "database": "isolated TemporaryDirectory SQLite; removed when host stopped",
     "dockerUsed": false
   },
+  "containerAcceptance": {
+    "dockerClientVersion": "29.8.2",
+    "composeVersion": "5.5.1",
+    "daemonStatus": "unavailable: Docker Desktop Linux engine named pipe was absent",
+    "composeBuildAndRun": "NOT RUN",
+    "existing8080_8081_8084EnvironmentsChanged": false
+  },
   "map": {
     "regionsDisplayed": 5,
     "placesDisplayed": 17,

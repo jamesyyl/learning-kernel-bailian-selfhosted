@@ -57,6 +57,7 @@
 - Runtime/隔離 SQLite 同 learner 完成 10 個不同生成 Activity ID／題目；Map 上 17/17 Place 取得 canonical Surface/Evidence，Family exploration 26/26 取得 Surface/Evidence。Matrix：`docs/evidence/math-u1-supply-matrix-final-0.3.4.json`；trace：`docs/evidence/math-u1-10-activity-trace.json`。
 - Codex in-app Chromium 顯示完整 Map；實際沿 Road 從 U1-2→U1-3→U1-5，作答單選、多選、multi-classification、integer、structured-factorization、free text；全部由 Runtime 判定正確。單選錯答留題，可重試答對；初始題 2 的 Next Decision 回傳不同的題 3。詳細：`docs/evidence/math-u1-browser-acceptance-2026-10-14.json`。
 - Local browser acceptance host 使用 TemporaryDirectory SQLite；沒有建置或操作 Docker，也沒有觸及使用者原始 checkout/SQLite。SDK #335、Root #3 均不合併，等待使用者體驗與明確授權。
+- **Docker/SQLite 狀態分開記錄：** SQLite adapter 與隔離 Runtime 全套測試 PASS；Docker client 29.8.2、Compose 5.5.1 存在，但 Docker Desktop Linux engine named pipe 無法連接。Compose build/up NOT RUN、Docker acceptance BLOCKED；不啟動 daemon、不碰既有 8080/8081/8084 環境。
 
 ## PR #3 LK Next Decision 舊驗收（2026-10-13；由以上 Issue #4 驗收更新取代）
 
