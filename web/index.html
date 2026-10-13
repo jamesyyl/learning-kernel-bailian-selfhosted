@@ -145,6 +145,16 @@
         </article>
         <aside class="helper-card"><span class="helper-icon"><i class="ph ph-lightbulb" aria-hidden="true"></i></span><div><h2>陪練提示</h2><p id="hintText">提示功能會在後續開放。現在可以先自己想想，再送出作答。</p><button class="button button-outline" type="button" id="hintButtonAside" disabled>提示功能準備中</button></div></aside>
       </div>
+      <section class="lk-next-decision" id="lkNextDecision" hidden aria-live="polite" aria-labelledby="lkNextDecisionTitle">
+        <p class="eyebrow">LEARNING KERNEL 建議</p>
+        <h2 id="lkNextDecisionTitle">正在找下一個適合的練習…</h2>
+        <p class="lk-next-prompt" id="lkNextDecisionPrompt">Learning Kernel 正在查看這次練習的紀錄。</p>
+        <p class="lk-next-reason" id="lkNextDecisionReason"></p>
+        <div class="lk-next-actions">
+          <button class="button button-primary" type="button" id="startLkRecommended" hidden>開始下一個練習<i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+          <button class="button button-outline" type="button" id="returnToJourney">返回學習旅程</button>
+        </div>
+      </section>
       <section class="daily-summary" id="dailySummary" hidden aria-live="polite">
         <span class="summary-icon"><i class="ph ph-check-circle" aria-hidden="true"></i></span><p class="eyebrow">TODAY PRACTICE</p><h2>今日練習完成</h2><p>你完成了 10 個活動。今天留下的是練習過程，長期狀態仍由後續學習證據確認。</p><div class="summary-facts"><div><span>完成活動</span><strong>10 個</strong></div><div><span>完成時間</span><strong id="summaryTime">—</strong></div></div><button class="button button-primary" type="button" data-page="today">回到今日<i class="ph ph-arrow-right" aria-hidden="true"></i></button>
       </section>

@@ -1,11 +1,11 @@
 # 本地 Codex 交接：Option 2 自架開發
 
-更新：2026-10-12。PR #1 已 squash merge 至 main，merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`。目前 PR #2 工作分支為 `codex/phase4-5-trusted-feedback`，從最新 main 建立；PR #2「LK Trusted Evaluation Feedback + Retry」已完成本機實作與驗收，等待使用者體驗，不要合併。此文件更新聚焦 PR #2 功能交接。
+更新：2026-10-13。PR #1 merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`、PR #2 均已合併。PR #3「LK Next Decision」本機實作與驗收已完成；root 分支 `codex/lk-next-decision-loop` 從 `origin/main@5e5fae53426c23a9b2c2ba57ac5882b341867e99` 建立。因必要的私有 SDK branch push 被 GitHub GH007 拒絕，SDK commit 尚不可從遠端取得；沒有建立 PR #3 Draft，也沒有推送 root 分支。此文件更新聚焦 PR #3 恢復與發布狀態。
 
 ## 使用者決定與目標
 
 - 起點是使用者提供的 Option 2 單頁 HTML，已在 `web/index.html`。使用者喜歡部署版的功能，但單頁 HTML 與先前網站有些差異；先以這份 HTML 為基線，實測後逐步修正。保留其視覺與操作意圖。
-- 新 repo 與原 `learning-kernel-bailian` 分離；SDK 以固定私有 submodule 引入。不要為了此任務更改原 repo 或 SDK 上游。
+- 新 repo 與原 `learning-kernel-bailian` 分離；SDK 以固定私有 submodule 引入。原 repo 與 SDK `main` 不變；PR #3 所需 SDK Pack 供應只可在獨立分支維護。
 - 優先完成能在本機瀏覽器實際使用的數學 U1 出題、作答、原始觀察紀錄與再次讀取流程，然後再擴張。個人使用、家中區域網；加密、雲端／每日備份、登入、GitHub Actions、額外部署流程都不是當前門檻。不要因這些議題卡住功能開發。
 - 不要假稱其他科目已有 LK 支援。未供應的活動可清楚標示尚未開放；不要用網頁內假進度、假判分替代 Runtime 結果。
 - 不要求使用者每一步貼輸出給遠端代理。本地 Codex 可以直接在 WSL 執行、修正與驗證。PR #1 的提交身分隱私修正已依使用者授權處理；main 與 feature branch 的程式碼樹保持一致，原提交訊息、名稱、時間戳及祖先關係保留。
@@ -18,7 +18,25 @@
 - 正確與未能判斷都依 Runtime advance/complete directive；未能判斷顯示中性訊息。瀏覽器只呈現結果，不判分。
 - 本機驗收使用 Windows 11 + Docker Desktop/WSL2、隔離 Compose project `lk-pr2-20261012`、`http://localhost:8081` 與隔離資料庫 `data/pr2-feedback-20261012/learning-kernel.sqlite3`；既有主資料庫保留。
 - 驗收：unittest 17 passed、Node check、Python compileall、Ruff、diff check 通過；canonical evaluator 三種 verdict 均已直接核對。真實瀏覽器完成單選錯誤後重試答對、多選連錯兩次後答對；兩輪流程合計 SQLite 10 observation / 10 attempt chain / 10 trusted evidence / 10 response-cache entries，ordinal/count/retryCount 逐次為 1/1/0、2/2/1，以及 1/1/0、2/2/1、3/3/2。Runtime restart 後 readiness 與十筆記錄仍可讀；先前 exact HTTP replay 實測回傳快取 response，未增加紀錄。
-- PR #2 尚待建立 Draft PR／使用者體驗；不得合併。NAS 正式部署及備份／還原未驗收。
+- PR #2 已合併至 main。NAS 正式部署及備份／還原未驗收。
+
+## PR #3 當前狀態（2026-10-13）
+
+- 根據 pinned SDK Phase 7.9.4 確認 Next Decision 已在 canonical Runtime：讀 exact-release Evidence → project Learner State → derive legal routes → choose navigation → 驗證實際 Activity Pool supply → 回 learner-safe Surface。原 SDK Pack 缺少可供應的 U1.1 classification-transfer Activity，因此在獨立私有 SDK 分支補 Pack 0.3.2、deterministic generator、獨立 verifier 和 artifact；未改推薦器或 evaluator。
+- SDK 分支 `vendor/learning-kernel-sdk:codex/u1-classification-transfer-supply` 本機 commit `ae263228d1d8a955a7ef8c40ef3a062f0ace8026`。GitHub push 回 GH007 private-email protection；本任務明確不處理 Git Email，因此沒有改 email、amend 或重寫歷史。SDK Draft PR 未建立。根工作目錄有未發布的 gitlink 指向此 commit；要 push root PR 前，先讓私有 SDK commit 可從遠端取得，否則公開 PR 將有無法 checkout 的 submodule。
+- Root 分支 `codex/lk-next-decision-loop` 的 UI 在完成活動後用 session 起始 `u1-1/factor-structure` 作上下文重新呼叫 `/surface`，不送 `learnerSelectedCandidateId`；返回的真實 Surface 暫存在記憶體。孩子按「開始下一個練習」才載入相同 Surface；沒有候選或 Runtime error 時顯示中性狀態。延續 current today-practice mode；前端只展示 routeKind 和 Surface 內容。
+- Seed 在 SQLite 安裝/啟用 Pack 0.3.2 並加入 direct-classification、divisibility、transfer 三個經 Pack verifier/admission 的 Pool entries。0.3.1 artifact 仍保留，沒有刪除或改寫舊 SQLite 資料。
+- Windows 11 + Docker Desktop 29.8.2 / Compose 5.5.1；隔離 project `lk-pr3c-20261013`、`http://localhost:8084`、資料庫 `data/pr3-next-decision-20261013c/learning-kernel.sqlite3`。Docker build/up、雙服務 health、seed 首次/重複、`/healthz`/`/api/ready` 200、schema rev4 通過。原 8080/8081 容器及資料未變；另兩個隔離驗收 DB 8082/8083 保留，未刪除。
+- Local acceptance: self-hosted unittest 17 passed; SDK Python 3.12 targeted suite covers generator, artifact/runtime, Surface compatibility, and Phase 7.9.4 evidence-to-decision/supply; `node --check`, Python `compileall`, changed-file Ruff check/format, `git diff --check` passed. GitHub Actions 未執行。
+- 真實瀏覽器完成 U1.1 Surface 單選+多選，LK回正確 verdict/advance/complete；completion 後 Runtime 回 route `delayed_confirmation` 和實際可供應 Surface。Start 後的 Surface 重啟 Runtime 後仍可提交。第二步錯答會留題、可重試；DB chain ordinals `[1,2]`，capture `attemptCount` 1→2、`retryCount` 0→1。當前這條真實瀏覽器 Evidence path 下 LK 選擇再次確認 direct classification，因此 prompt 與初始題型相近；copy 說明為「再想一次」，未假稱 transfer 已在該瀏覽器路徑中被選中。SDK integration separately verifies a differing sequential Evidence snapshot selecting the real transfer Activity.
+- Final isolated SQLite check before/after restart: 9 observation records, 9 trusted Evidence, 9 Attempt Chain rows (其中一條含 ordinal 1→2，其他 8 條單次), 7 issued Surface bindings；`PRAGMA integrity_check`=`ok`。Runtime 重啟後 readiness/schema rev4 與記錄數不變。
+- Surface browser boundary is unchanged: same-origin host allows only Surface reads and raw-observation writes. SDK tests check no validation fields in Surface and no-supply fail-closed; local host tests block privileged/unimplemented routes. Other subjects/modes, NAS and backup remain out of scope.
+
+### 發布阻礙與恢復步驟
+
+1. 目前不要推 root branch 或建立 PR #3；其 submodule SHA 尚未出現在 SDK remote。
+2. 下一輪先解決私有 SDK repo 的 commit push identity protection（本輪未處理 email）。只有 SDK commit 可正常遠端讀取後，才可推 root branch、建立 Draft PR #3。
+3. PR #3 要保留 Draft，提供使用者體驗；不得合併。不要建立 PR #4 或改 SDK main。
 
 ## 已有環境和已驗證事實
 
@@ -43,7 +61,7 @@
 
 ## 後續工作
 
-1. 建立並推送 PR #2 Draft，提供 `http://localhost:8081` 給使用者體驗；不合併，等使用者決定。
+1. 先依 PR #3 發布阻礙步驟處理私有 SDK commit 的可達性，再推 root branch、建立 Draft PR #3；保留 Draft 等使用者體驗。
 2. 其他科目、學習摘要、專項/自訂模式保持尚未開放；FnOS/NAS 部署、存取邊界與 SQLite 備份仍未驗收。
 
 ## 重要檔案與參考

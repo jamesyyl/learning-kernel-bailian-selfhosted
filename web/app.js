@@ -5,9 +5,8 @@ const LK_SURFACE_URL = `/api/learners/${encodeURIComponent(LK_LOCAL_LEARNER)}/en
 const LK_OBSERVATIONS_URL = `/api/learners/${encodeURIComponent(LK_LOCAL_LEARNER)}/environments/${encodeURIComponent(LK_LOCAL_ENVIRONMENT)}/packs/${encodeURIComponent(LK_MATH_U1_PACK)}/observations`;
 const LK_SURFACE_REQUEST = {
   currentContext: {
-    currentPlaceLocalId: "u1-1/composite-number",
+    currentPlaceLocalId: "u1-1/factor-structure",
     todayPractice: true,
-    learnerSelectedCandidateId: "navigation/fluency-practice/u1-1/family/direct-prime-composite-classification",
   },
 };
 
@@ -24,6 +23,7 @@ let lkPendingCapture = null;
 let lkAnswersLocked = false;
 let lkNextStepIndex = null;
 let lkFinished = false;
+let lkPendingNextSurface = null;
 
 const lkBaseRenderHome = renderHome;
 
@@ -271,6 +271,7 @@ function lkClearActivity() {
   lkAnswersLocked = false;
   lkNextStepIndex = null;
   lkFinished = false;
+  lkPendingNextSurface = null;
   document.querySelector("#backFromActivity").disabled = false;
   document.querySelector("#activityCounter").hidden = true;
   document.querySelector("#activityProgress").hidden = true;
@@ -280,6 +281,7 @@ function lkClearActivity() {
   submitButton.textContent = "送出作答";
   document.querySelector("#nextActivity").hidden = true;
   document.querySelector("#dailySummary").hidden = true;
+  document.querySelector("#lkNextDecision").hidden = true;
   document.querySelector("#questionLayout").hidden = false;
   lkSetActivityState("");
 }
@@ -313,21 +315,131 @@ async function lkStartU1() {
     if (body.schemaVersion !== "learning-kernel.surface-ir@1") {
       throw new Error("unexpected_surface_schema");
     }
-    lkSurface = body;
-    lkPoints = body.lineage?.reportableObservationPoints
-      ?.filter((point) => Number.isInteger(point.stepIndex))
-      .sort((a, b) => a.stepIndex - b.stepIndex) || [];
-    const firstStepIndex = body.execution?.stepIndex;
-    if (!Number.isInteger(firstStepIndex) || !lkPoints.some((point) => point.stepIndex === firstStepIndex)) {
-      throw new Error("surface_step_unavailable");
-    }
-    lkRenderStep(firstStepIndex);
+    lkLoadSurface(body, "數學 U1｜質數與合數");
   } catch (error) {
     const code = error instanceof Error ? error.message : "runtime_unavailable";
     document.querySelector("#activityQuestion").textContent = "目前無法載入數學 U1 活動";
     document.querySelector("#answerHost").replaceChildren();
     document.querySelector("#submitAnswer").hidden = true;
     lkSetActivityState(lkErrorMessage(code), true);
+  }
+}
+
+function lkLoadSurface(body, title) {
+  const points = body.lineage?.reportableObservationPoints
+    ?.filter((point) => Number.isInteger(point.stepIndex))
+    .sort((a, b) => a.stepIndex - b.stepIndex) || [];
+  const firstStepIndex = body.execution?.stepIndex;
+  if (!Number.isInteger(firstStepIndex) || !points.some((point) => point.stepIndex === firstStepIndex)) {
+    throw new Error("surface_step_unavailable");
+  }
+  lkSurface = body;
+  lkPoints = points;
+  document.querySelector("#activityTitle").textContent = title;
+  document.querySelector("#questionLayout").hidden = false;
+  document.querySelector("#lkNextDecision").hidden = true;
+  lkRenderStep(firstStepIndex);
+}
+
+function lkRouteReason(routeKind) {
+  const reasons = {
+    advance: "依照你剛完成的練習，LK 建議接著往前學一小步。",
+    transfer_confirmation: "LK 想讓你把剛練到的想法，帶到不同題目裡試試看。",
+    targeted_confirmation: "LK 建議再確認一次剛練到的方法。",
+    wrong_turn_discrimination: "換個情境，看看怎麼找出真正有用的線索。",
+    remediation: "先用一個小練習，把剛才遇到的地方再弄清楚。",
+    return_from_remediation: "回到原來的學習路線，再試一次新的題目。",
+    alternate_method: "試試另一種解題方法。",
+    alternate_representation: "換一種表示方式，再練習看看。",
+    delayed_confirmation: "LK 想請你再想一次，確認還記得這個方法。",
+    fluency_practice: "再練習一次，讓這個方法更熟悉。",
+    learner_exploration: "LK 找到一個可以自由探索的小活動。",
+  };
+  return reasons[routeKind] || "這是 LK 根據目前學習紀錄找到的下一個活動。";
+}
+
+function lkRecommendationPrompt(surface) {
+  const steps = surface?.surface?.payload?.steps;
+  const firstStep = Array.isArray(steps) ? steps[surface.execution?.stepIndex] : null;
+  const prompt = firstStep?.blocks?.find((block) => block.capability === "content.text@1")?.props?.text;
+  return typeof prompt === "string" && prompt.trim()
+    ? prompt.trim()
+    : "一個新的數學 U1 練習";
+}
+
+function lkShowRecommendationMessage(title, detail, canStart = false) {
+  const panel = document.querySelector("#lkNextDecision");
+  const titleNode = document.querySelector("#lkNextDecisionTitle");
+  const promptNode = document.querySelector("#lkNextDecisionPrompt");
+  const reasonNode = document.querySelector("#lkNextDecisionReason");
+  const startButton = document.querySelector("#startLkRecommended");
+  titleNode.textContent = title;
+  promptNode.textContent = detail;
+  reasonNode.textContent = "";
+  startButton.hidden = !canStart;
+  panel.hidden = false;
+  document.querySelector("#questionLayout").hidden = true;
+  document.querySelector("#dailySummary").hidden = true;
+}
+
+async function lkRequestNextDecision() {
+  lkShowRecommendationMessage("正在找下一個適合的練習…", "Learning Kernel 正在查看這次練習的紀錄。", false);
+
+  try {
+    const response = await fetch(LK_SURFACE_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        currentContext: {
+          currentPlaceLocalId: LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId,
+          todayPractice: true,
+        },
+      }),
+      cache: "no-store",
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      if (body.error === "activity_supply_unavailable" || body.error === "no_legal_route_candidates") {
+        lkPendingNextSurface = null;
+        lkShowRecommendationMessage(
+          "這次練習完成了",
+          "目前沒有可接續的數學 U1 活動。你的學習紀錄已保存。",
+        );
+        return;
+      }
+      throw new Error(body.error || "runtime_unavailable");
+    }
+    if (
+      body.schemaVersion !== "learning-kernel.surface-ir@1" ||
+      !body.execution?.observation?.routeKind ||
+      !Array.isArray(body.lineage?.reportableObservationPoints) ||
+      !Array.isArray(body.surface?.payload?.steps)
+    ) {
+      throw new Error("unexpected_surface_schema");
+    }
+    lkPendingNextSurface = body;
+    lkShowRecommendationMessage("LK 為你挑了下一個練習", lkRecommendationPrompt(body), true);
+    document.querySelector("#lkNextDecisionReason").textContent = lkRouteReason(body.execution.observation.routeKind);
+  } catch {
+    lkPendingNextSurface = null;
+    lkShowRecommendationMessage(
+      "這次練習完成了",
+      "現在暫時無法取得下一步建議。你的學習紀錄已保存，稍後可以再試。",
+    );
+  }
+}
+
+function lkStartRecommendedSurface() {
+  if (!lkPendingNextSurface) return;
+  const surface = lkPendingNextSurface;
+  lkPendingNextSurface = null;
+  try {
+    lkLoadSurface(surface, "數學 U1｜LK 推薦練習");
+  } catch {
+    lkShowRecommendationMessage(
+      "目前無法開始這個活動",
+      "你的學習紀錄已保存。請返回學習旅程，再試一次。",
+    );
   }
 }
 
@@ -643,8 +755,7 @@ function lkContinue() {
     return;
   }
   if (lkFinished) {
-    lkClearActivity();
-    goPage("today");
+    void lkRequestNextDecision();
   }
 }
 
@@ -660,6 +771,8 @@ function lkHandleClick(event) {
   const hintButton = target.closest("#hintButtonAside");
   const placeButton = target.closest("#learnAtPlace, #practiceAtPlace");
   const recommendedButton = target.closest("#startRecommended");
+  const startLkRecommended = target.closest("#startLkRecommended");
+  const returnToJourney = target.closest("#returnToJourney");
 
   if (answer) {
     event.preventDefault();
@@ -685,6 +798,19 @@ function lkHandleClick(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
     void lkStartU1();
+    return;
+  }
+  if (startLkRecommended) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    lkStartRecommendedSurface();
+    return;
+  }
+  if (returnToJourney) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    lkClearActivity();
+    goPage("journey");
     return;
   }
   if (placeButton) {

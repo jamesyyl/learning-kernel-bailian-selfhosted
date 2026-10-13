@@ -4,9 +4,11 @@
 
 - UI 基線：使用收到的 `bailian-option-2-subject-cards.html`，保存在 `web/index.html`；功能修改都從這份開始。
 - 新 repo：`jamesyyl/learning-kernel-bailian-selfhosted`，與原百煉獨立。
-- 工作分支：`feat/option2-docker-shell`。
+- PR #3 本機工作分支：`codex/lk-next-decision-loop`（從 `origin/main@5e5fae53426c23a9b2c2ba57ac5882b341867e99` 建立）。
 - PR #1：[Pull Request #1](https://github.com/jamesyyl/learning-kernel-bailian-selfhosted/pull/1)。
-- 原 `learning-kernel-bailian` 與 canonical `learning-kernel-sdk` 沒有被修改。
+- PR #2：[Pull Request #2](https://github.com/jamesyyl/learning-kernel-bailian-selfhosted/pull/2)，已合併至 main。
+- PR #3 尚未建立；本機驗收與發布阻礙見下方。
+- 原 `learning-kernel-bailian` 未修改；canonical SDK `main` 未修改。PR #3 的 Pack 供應補足只在獨立 SDK branch。
 
 ## 順序與狀態
 
@@ -17,7 +19,8 @@
 | 2 | Windows 11＋WSL2 建置和 Runtime 驗收 | 本機通過（2026-10-12） | Docker 29.8.2、Compose 5.5.1；兩個映像成功建置，web/runtime containers healthy；`/healthz` 回 `ok`；Runtime restart 後 readiness 為 schema revision 4，`data/learning-kernel.sqlite3` 存在（4096 bytes）；完整 unittest 11 項全通過、0 skipped；首頁基礎載入確認。完整學習流程記錄於第 4 項。 |
 | 3 | 準備 U1 Pack 與合法 Activity Pool 供應 | 本機通過（2026-10-12） | WSL Docker build 後，`docker compose exec runtime python -m api.seed_u1` 首次及再次執行皆成功；同源 Surface HTTP 200、schema `learning-kernel.surface-ir@1`、Pack 0.3.1。 |
 | 4 | 把 Option 2 練習頁接到 LK | 程式已寫；本機瀏覽器通過（2026-10-12） | 首頁選數學 U1、載入真實 Surface、完成單選及多選兩步、每步收到 Runtime 保存回覆；頁面只送 raw observation，沒有瀏覽器判分。未接通科目與學習摘要標示尚未開放。 |
-| 4.5 | LK 判斷結果與孩子可理解的回饋 | PR #2 本機驗收通過，Draft PR 等待體驗 | pinned LK SDK 是 correct/incorrect/indeterminate 唯一判斷來源。百煉只呈現安全 verdict/message/action；答錯留在原題並可重試，correct/indeterminate 依 Runtime directive；前端不取得標準答案或判分規則。exact same-request replay 使用 SQLite response cache。 |
+| 4.5 | LK 判斷結果與孩子可理解的回饋 | PR #2 已合併 | pinned LK SDK 是 correct/incorrect/indeterminate 唯一判斷來源。百煉只呈現安全 verdict/message/action；答錯留在原題並可重試，correct/indeterminate 依 Runtime directive；前端不取得標準答案或判分規則。exact same-request replay 使用 SQLite response cache。 |
+| 4.6 | LK Next Decision 與實際活動推薦 | PR #3 本機驗收通過；Draft PR 受阻 | 完成活動後以原 U1-1 session context 呼叫既有 `/surface`，不指定 candidate；只顯示 SDK 回傳的可供應 Surface，孩子可選擇開始或返回旅程。LK route reason 由前端做文案映射，不含判分或推薦演算法。Pack 0.3.2 新增經驗證的分類轉移 Activity/Pool entry。GitHub 拒絕 SDK 分支推送，PR #3 尚未發布。 |
 | 5 | NAS 持久化與存取邊界 | 未驗證（不阻擋本機使用） | 本機 bind mount 的 SQLite 已保存 observation/attempt/evidence，Runtime 重啟後計數不變；FnOS/NAS 路徑、區網存取與正式部署仍待另行驗收。此版沒有帳號登入。 |
 | 6 | 簡單 SQLite 備份（後置） | 暫緩，不阻擋開發 | 先完成 LK 活動與作答流程；有正式學習資料後，再加入本機資料庫快照和還原。 |
 | 7 | FnOS/N100 驗收 | 未完成，依賴 2–5 | linux/amd64 冷啟、重啟、資料保存、raw observation 通過；備份後續補上。 |
@@ -37,15 +40,27 @@
 - 專案 unittest：11 passed、0 skipped；`node --check web/app.js` 與 `git diff --check` 通過。
 - Python 靜態編譯檢查 `python3 -m compileall -q api tests` 通過；Docker Compose build/up、seed 首次及重複執行、兩服務 healthcheck 均通過。
 
-## PR #2 本機驗收（2026-10-12）
+## PR #2 本機驗收與合併（2026-10-12 至 2026-10-13）
 
 - 以 Windows 11 + Docker Desktop/WSL2 在獨立 Compose project `lk-pr2-20261012` 驗收，前端 URL 為 `http://localhost:8081`；測試資料位於被 Git 忽略的 `data/pr2-feedback-20261012/learning-kernel.sqlite3`，既有 `data/learning-kernel.sqlite3` 未動。
 - Docker Compose 兩服務 healthy；`/healthz` 與 `/api/ready` HTTP 200，schema revision 4；Math U1 seed 首次及重複執行成功。
 - 完整 unittest：17 passed；`node --check web/app.js`、Python `compileall`、Ruff 與 `git diff --check` 通過。固定 SDK evaluator 實際回傳 correct、incorrect、indeterminate；未修改或更新 SDK submodule。
 - 真實瀏覽器從 Option 2 首頁進入數學 U1，單選錯誤後留在原題、重試答對；多選連錯兩次後第三次答對並完成。UI 顯示 LK verdict 與 Runtime 指令，未在前端判分。
 - 兩輪瀏覽器驗收後，隔離 SQLite 共保存 10 筆 observation、10 條 attempt chain、10 筆 trusted evidence 與 10 筆 exact-request response-cache 記錄。每輪 attempt ordinal/count/retryCount 依序為 `1/1/0, 2/2/1`（單選）及 `1/1/0, 2/2/1, 3/3/2`（多選）。Runtime 重啟後 readiness 與資料可讀；相同 HTTP 請求 replay 測試回傳相同 response，對應資料筆數不變。
-- NAS 正式部署與備份／還原尚未驗收；其他科目與模式仍顯示未開放。PR #2 未合併，等使用者體驗後決定。
+- PR #2 已合併至 main；NAS 正式部署與備份／還原尚未驗收，其他科目與模式仍顯示未開放。
+
+## PR #3 LK Next Decision 本機驗收（2026-10-13）
+
+- 基於 `origin/main@5e5fae53426c23a9b2c2ba57ac5882b341867e99` 建立 `codex/lk-next-decision-loop`。pinned SDK 原 commit 為 `b63404173e39a37685e9914523ba3704ac1664ad`；Phase 7.9.4 已有 Evidence→Learner State→legal route→Next Decision→Activity Pool 的 canonical 路徑。缺口是 LK 可選到的 U1.1 transfer Task Family 沒有固定 Pack Activity/Pool 供應。
+- 在私有 SDK 獨立分支 `codex/u1-classification-transfer-supply` 加入 Pack 0.3.2 transfer Activity、deterministic generator、獨立 verifier 與 artifact；SDK commit `ae263228d1d8a955a7ef8c40ef3a062f0ace8026`，保留原 0.3.1 artifact。沒有改 recommender、evaluator 或 SDK main。GitHub 以 GH007 拒絕推送該新分支；此階段明確不處理 Git Email，因此 SDK 分支未發布，PR #3 不能建立。
+- 自架 branch 的 seed 以 canonical generator/verifier 建立 transfer Pool entry，變異 policy 與 SDK 已驗證的 Activity Pool admission 相同；`Dockerfile.runtime` 同時保留 Pack 0.3.1/0.3.2 供應，SQLite 中舊 release 歷史不被清除。瀏覽器完成後重新呼叫同一 canonical `/surface`，使用 session 起始 Place 且不傳固定 candidate；Runtime 回傳實際 Surface 才顯示推薦，開始時呈現該 Surface 本身。
+- Windows 11 + Docker Desktop/WSL2；使用隔離 Compose project `lk-pr3c-20261013`、前端 `http://localhost:8084`、資料庫 `data/pr3-next-decision-20261013c/learning-kernel.sqlite3`。Docker build/up 成功，兩服務 healthy；`/healthz`、`/api/ready` HTTP 200，schema revision 4；Math U1 seed 首次及重複執行均成功。原 8080、8081 及其資料庫未改。
+- Self-hosted unittest：17 passed；`node --check web/app.js`、`compileall`、Ruff（改動 Python 檔）、Ruff format check（改動 Python 檔）、`git diff --check` 通過。SDK Python 3.12 聚焦驗收 140 passed，涵蓋 generator、Pack artifact/runtime、Surface compatibility 及 Phase 7.9.4 evidence→decision→supply 整合測試。
+- 真實瀏覽器：Option 2 首頁→數學 U1→LK Surface；第一步單選、第二步多選均由 Runtime 回傳正確回饋。活動完成後 LK 回傳 delayed-confirmation 類 route 及真實可供應 Surface；Start 載入該 Surface。重試錯誤多選後留題、再答對；SQLite Attempt Chain ordinal 為 `[1,2]`，原始 attemptCount 為 1/2，retryCount 為 0/1。這次真實 evidence path 的 LK 目前推薦再確認同一個直接分類題型；另有 SDK Phase 7.9.4 整合測試驗證在不同 sequential evidence snapshot 下 route 轉至 Pack transfer 活動。
+- Runtime 重啟後 pending issued Surface 仍可啟動及提交作答；重啟前後 SQLite integrity check 為 `ok`。最新隔離資料庫共 9 observations、9 trusted Evidence、9 Attempt Chain rows；其中一條 chain 有 ordinal `[1,2]`，capture 的 attemptCount 為 `1,2`、retryCount 為 `0,1`，其餘 8 條各有一次嘗試。重啟前後總數不變。
+- 前端只透過允許的 Surface/raw observation API；host allowlist tests 阻擋其他特權路由。Surface 不含 answer key/validation payload；SDK 整合測試涵蓋缺少可供應 Pool 時 fail closed。未啟動 GitHub Actions。
+- 尚未發布或建立 Draft PR #3，原因是必要的私有 SDK branch push 被 GitHub GH007 拒絕；不要從公開 repo 指向遠端不可取得的 submodule commit。NAS/備份、其他科目與模式仍未驗收。
 
 ## 目前不可用的部分
 
-PR #1 已合併。PR #2 的 LK Trusted Evaluation Feedback + Retry 已完成本機驗收，Draft PR 等待使用者體驗；PR #2 尚未合併。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime，頁面明確標為尚未開放。更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。
+PR #1、PR #2 已合併。PR #3 的 LK Next Decision 接線已在本機完成驗收，但私有 SDK branch push 被 GitHub GH007 阻擋，SDK commit 尚不可由遠端取得，因此 PR #3 尚未建立且本工作分支尚未發布。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime；更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。
