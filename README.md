@@ -10,7 +10,7 @@ The SDK's four vNext Runtime SQL migrations were applied to SQLite 3.53.1 during
 
 Windows 11 + WSL2 validation passed on 2026-10-12 with Docker 29.8.2 and Compose 5.5.1. Both services build and become healthy; `/healthz` and `/api/ready` return HTTP 200 with schema revision 4. The Math U1 seed succeeded on its first run and on a repeat run. The Nginx same-origin route returns the pinned Pack's real `learning-kernel.surface-ir@1` response.
 
-The Option 2 shell now runs a local Math U1 activity. It renders the Runtime-issued prime/composite and divisibility steps, accepts single and multiple selections, and submits only `bailian.observation-capture@1` raw responses. Runtime controls the advance/complete directive and provides neutral saved feedback; the browser does not score answers or display invented progress. At the latest local acceptance, SQLite held 14 observation records, 14 attempt chains, and 14 trusted evidence rows; all remained readable after Runtime restarted. The local unittest suite passed: 11 tests, 0 skipped, including the pinned SDK migration test.
+The Option 2 shell runs a local Math U1 activity. It renders the Runtime-issued prime/composite and divisibility steps, accepts single and multiple selections, and submits only `bailian.observation-capture@1` raw responses. PR #2 adds learner-safe feedback from the pinned SDK's trusted evaluation: correct answers follow the Runtime directive, incorrect answers stay on the same question for another attempt, and indeterminate results remain neutral. The browser only renders this result; it does not score answers or receive answer keys or validation rules. Exact observation-request replays return the cached response without another Runtime evaluation. The PR #2 local suite passed 17 tests; real-browser retry, attempt lineage, persistence, and Runtime-restart replay were verified against an isolated SQLite database.
 
 Other subjects, growth summaries, parent summaries, and targeted/custom modes are labeled as unavailable until they are connected to LK. The SQLite database is the local persistent store; the browser cannot call Pack management or trusted-evaluation routes.
 
@@ -20,10 +20,10 @@ The self-hosted Runtime consumes the SDK through a pinned Git submodule at `b634
 
 ## Run locally
 
-1. Clone the work branch with the SDK submodule initialized (the GitHub account needs read access to `learning-kernel-sdk`):
+1. Clone the PR #2 branch with the SDK submodule initialized (the GitHub account needs read access to `learning-kernel-sdk`):
 
    ```sh
-   git clone --recurse-submodules --branch feat/option2-docker-shell https://github.com/jamesyyl/learning-kernel-bailian-selfhosted.git
+   git clone --recurse-submodules --branch codex/phase4-5-trusted-feedback https://github.com/jamesyyl/learning-kernel-bailian-selfhosted.git
    ```
 
 2. Copy `.env.example` to `.env`.
@@ -64,4 +64,4 @@ For the WSL Codex handoff, local verification evidence, and remaining work, read
 
 ## Current limits and next work
 
-See [the ordered Dockerization TODO](docs/DOCKERIZATION_TODO.md). The local Math U1 learning loop is implemented and browser-verified. Phase 4.5, LK trusted-evaluation feedback and retry, is reserved for PR #2 and has not started. Broader U1 coverage and additional practice modes remain future work. FnOS/NAS deployment, access boundaries for that host, and backups have not been verified; they do not block local use. Keep the browser boundary limited to Surface reads and raw-observation writes, and do not infer progress in the page.
+See [the ordered Dockerization TODO](docs/DOCKERIZATION_TODO.md). PR #1 is merged; PR #2 implements and locally verifies Phase 4.5, LK trusted-evaluation feedback and retry, and is awaiting user review. Broader U1 coverage and additional practice modes remain future work. FnOS/NAS deployment, access boundaries for that host, and backups have not been verified; they do not block local use. Keep the browser boundary limited to Surface reads and raw-observation writes, and do not infer progress in the page.

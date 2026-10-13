@@ -18,6 +18,10 @@ let lkResponseBlock = null;
 let lkResponseValue = null;
 let lkUsedHintIds = [];
 let lkStepStartedAt = 0;
+let lkAttemptOrdinal = 1;
+let lkLastCapturedAtMs = 0;
+let lkPendingCapture = null;
+let lkAnswersLocked = false;
 let lkNextStepIndex = null;
 let lkFinished = false;
 
@@ -246,12 +250,12 @@ function lkErrorMessage(errorCode) {
   return messages[errorCode] || "Runtime 暫時無法完成這個步驟，請稍後重試。";
 }
 
-function lkSetActivityState(message, isError = false) {
+function lkSetActivityState(message, isError = false, visualState = null) {
   const state = document.querySelector("#submitState");
   if (!state) return;
   state.hidden = !message;
   state.textContent = message || "";
-  state.dataset.state = isError ? "error" : "saved";
+  state.dataset.state = isError ? "error" : visualState || "saved";
 }
 
 function lkClearActivity() {
@@ -261,8 +265,13 @@ function lkClearActivity() {
   lkResponseBlock = null;
   lkResponseValue = null;
   lkUsedHintIds = [];
+  lkAttemptOrdinal = 1;
+  lkLastCapturedAtMs = 0;
+  lkPendingCapture = null;
+  lkAnswersLocked = false;
   lkNextStepIndex = null;
   lkFinished = false;
+  document.querySelector("#backFromActivity").disabled = false;
   document.querySelector("#activityCounter").hidden = true;
   document.querySelector("#activityProgress").hidden = true;
   const submitButton = document.querySelector("#submitAnswer");
@@ -289,7 +298,7 @@ async function lkStartU1() {
   document.querySelector("#answerHost").replaceChildren();
   document.querySelector("#hintText").textContent = "活動載入後，可以先自己想想，也可以查看 Runtime 提供的提示。";
   document.querySelector("#hintButtonAside").hidden = true;
-  document.querySelector(".activity-unjudged").textContent = "作答送到本機 Runtime；頁面不顯示對錯";
+  document.querySelector(".activity-unjudged").textContent = "作答由 Learning Kernel 判斷；百煉只呈現結果";
   goPage("activity");
 
   try {
@@ -336,6 +345,10 @@ function lkRenderStep(stepIndex) {
   lkActiveStep = { step, stepIndex, point };
   lkResponseValue = lkResponseBlock?.capability === "response.multi-choice@1" ? [] : null;
   lkUsedHintIds = [];
+  lkAttemptOrdinal = 1;
+  lkLastCapturedAtMs = 0;
+  lkPendingCapture = null;
+  lkAnswersLocked = false;
   lkStepStartedAt = Date.now();
   lkNextStepIndex = null;
   lkFinished = false;
@@ -355,6 +368,7 @@ function lkRenderStep(stepIndex) {
   submitButton.textContent = "送出作答";
   document.querySelector("#nextActivity").hidden = true;
   document.querySelector("#nextActivity").disabled = false;
+  lkSetAnswerChoicesDisabled(false);
 
   if (!lkResponseBlock) {
     lkSetActivityState("這個步驟使用了目前頁面尚未支援的回答形式。", true);
@@ -409,7 +423,7 @@ function lkRenderChoices(block) {
 }
 
 function lkSelectChoice(button) {
-  if (!lkResponseBlock || !lkActiveStep) return;
+  if (!lkResponseBlock || !lkActiveStep || lkAnswersLocked || lkPendingCapture) return;
   const value = button.dataset.runtimeAnswer;
   const multi = lkResponseBlock.capability === "response.multi-choice@1";
   if (multi) {
@@ -476,6 +490,9 @@ function lkCapturePayload() {
     throw new Error("請先選一個答案。");
   }
 
+  const capturedAtMs = Math.max(Date.now(), lkLastCapturedAtMs + 1);
+  lkLastCapturedAtMs = capturedAtMs;
+
   return {
     schemaVersion: lkSurface.surface.observationCaptureVersion,
     decisionId: lkSurface.lineage.decisionId,
@@ -489,34 +506,39 @@ function lkCapturePayload() {
     },
     attempt: {
       attemptId: `attempt/${crypto.randomUUID()}`,
-      attemptOrdinal: 1,
-      attemptCount: 1,
+      attemptOrdinal: lkAttemptOrdinal,
+      attemptCount: lkAttemptOrdinal,
       activeWorkDurationMs: Math.max(0, Date.now() - lkStepStartedAt),
     },
     support: {
       hintIdsUsed: [...lkUsedHintIds],
       revealIdsUsed: [],
-      retryCount: 0,
+      retryCount: lkAttemptOrdinal - 1,
       assistanceLevel: lkUsedHintIds.length ? "hint_1" : "independent",
     },
-    capturedAt: new Date().toISOString(),
+    capturedAt: new Date(capturedAtMs).toISOString(),
     practiceMode: lkSurface.execution.practiceMode,
   };
 }
 
 async function lkSubmitAnswer() {
   if (!lkSurface || !lkActiveStep || !lkResponseBlock || lkFinished) return;
-  let capture;
-  try {
-    capture = lkCapturePayload();
-  } catch (error) {
-    lkToast(error instanceof Error ? error.message : "請先完成這一步。 ");
-    return;
+  if (!lkPendingCapture) {
+    try {
+      lkPendingCapture = lkCapturePayload();
+    } catch (error) {
+      lkToast(error instanceof Error ? error.message : "請先完成這一步。 ");
+      return;
+    }
   }
+  const capture = lkPendingCapture;
 
   const submitButton = document.querySelector("#submitAnswer");
   submitButton.disabled = true;
-  submitButton.textContent = "正在保存…";
+  submitButton.textContent = "正在判斷並保存…";
+  lkAnswersLocked = true;
+  lkSetAnswerChoicesDisabled(true);
+  document.querySelector("#backFromActivity").disabled = true;
   try {
     const response = await fetch(LK_OBSERVATIONS_URL, {
       method: "POST",
@@ -526,31 +548,93 @@ async function lkSubmitAnswer() {
     });
     const body = await response.json();
     if (response.status !== 202) throw new Error(body.error || "vnext_d1_persistence_failed");
-    if (!body.feedback || typeof body.feedback.message !== "string") {
+    const feedback = body.feedback;
+    if (
+      !feedback ||
+      !["correct", "incorrect", "indeterminate"].includes(feedback.verdict) ||
+      typeof feedback.message !== "string" ||
+      !["success", "retry", "neutral"].includes(feedback.tone) ||
+      !["advance", "complete", "retry"].includes(feedback.action) ||
+      !["advance", "complete"].includes(body.directive) ||
+      !body.receipt ||
+      body.receipt.evaluated !== true ||
+      typeof body.receipt.attemptChainId !== "string" ||
+      !Array.isArray(body.receipt.evidenceIds) ||
+      body.receipt.evidenceIds.length === 0
+    ) {
       throw new Error("unexpected_observation_receipt");
     }
 
-    lkSetActivityState(body.feedback.message);
-    submitButton.hidden = true;
-    const nextButton = document.querySelector("#nextActivity");
-    nextButton.hidden = false;
-    if (body.directive === "advance") {
+    const verdict = feedback.verdict;
+    const expectedAction = verdict === "incorrect" ? "retry" : body.directive;
+    if (feedback.action !== expectedAction) throw new Error("unexpected_runtime_directive");
+    let nextStepIndex = null;
+    let finished = false;
+    if (feedback.action === "advance") {
       const nextPoint = lkPoints.find((item) => item.stepIndex > lkActiveStep.stepIndex);
       if (!nextPoint) throw new Error("runtime_next_step_missing");
-      lkNextStepIndex = nextPoint.stepIndex;
+      nextStepIndex = nextPoint.stepIndex;
+    } else if (feedback.action === "complete") {
+      finished = true;
+    }
+
+    lkPendingCapture = null;
+    lkSetActivityState(feedback.message, false, feedback.tone);
+    document.querySelector("#backFromActivity").disabled = false;
+    const nextButton = document.querySelector("#nextActivity");
+    if (verdict === "incorrect") {
+      lkAttemptOrdinal = capture.attempt.attemptOrdinal + 1;
+      lkResponseValue = lkResponseBlock.capability === "response.multi-choice@1" ? [] : null;
+      lkUsedHintIds = [];
+      lkAnswersLocked = false;
+      lkStepStartedAt = Date.now();
+      lkSetAnswerChoicesDisabled(false);
+      lkClearChoiceSelection();
+      lkRenderHint(lkActiveStep.step.support?.hints || []);
+      submitButton.hidden = false;
+      submitButton.disabled = false;
+      submitButton.textContent = "再試一次";
+      nextButton.hidden = true;
+      lkNextStepIndex = null;
+      lkFinished = false;
+      return;
+    }
+
+    lkAnswersLocked = true;
+    lkSetAnswerChoicesDisabled(true);
+    lkFinished = finished;
+    submitButton.hidden = true;
+    nextButton.hidden = false;
+    if (nextStepIndex !== null) {
+      lkNextStepIndex = nextStepIndex;
       nextButton.textContent = "繼續下一題";
-    } else if (body.directive === "complete") {
+    } else if (finished) {
       lkFinished = true;
-      nextButton.textContent = "回到數學 U1";
-    } else {
-      throw new Error("unexpected_runtime_directive");
+      nextButton.textContent = "完成練習";
     }
   } catch (error) {
     const code = error instanceof Error ? error.message : "vnext_d1_persistence_failed";
     lkSetActivityState(lkErrorMessage(code), true);
     submitButton.disabled = false;
-    submitButton.textContent = "重新送出作答";
+    submitButton.textContent = "重新傳送同一次作答";
+    lkAnswersLocked = true;
+    lkSetAnswerChoicesDisabled(true);
+    document.querySelector("#backFromActivity").disabled = true;
   }
+}
+
+function lkSetAnswerChoicesDisabled(disabled) {
+  document.querySelectorAll(".runtime-answer-choice").forEach((choice) => {
+    choice.disabled = disabled;
+    choice.setAttribute("aria-disabled", String(disabled));
+  });
+}
+
+function lkClearChoiceSelection() {
+  document.querySelectorAll(".runtime-answer-choice").forEach((choice) => {
+    choice.setAttribute("aria-pressed", "false");
+    choice.setAttribute("aria-checked", "false");
+  });
 }
 
 function lkContinue() {
