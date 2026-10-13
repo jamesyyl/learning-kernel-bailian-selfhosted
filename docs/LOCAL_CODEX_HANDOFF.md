@@ -13,6 +13,21 @@
 - Root PR #3 保持 Draft，SDK PR #335 保持未合併；合併依賴順序仍是 SDK #335 先於 Root #3。未授權合併。
 - 已快轉推送：SDK branch `codex/u1-classification-transfer-supply` head `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root branch `codex/lk-next-decision-loop` implementation commit `8057a37d78b6cc3c485876ab8f23153a2531e740`。Root gitlink 指向該 SDK SHA。
 
+## 配對恢復 checkpoints（2026-10-14）
+
+- Root local checkpoint ref `checkpoint/math-u1-selfhosted-20261014` → `2efed1c48506c4531b824ed8dce5431ea0cb6cc6`。
+- SDK local checkpoint ref `checkpoint/math-u1-selfhosted-20261014` → `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root submodule gitlink 指向同一 SDK commit。
+- 兩個 checkpoint refs 是額外本機書籤；原 PR branches 也已快轉推送。Root #3 為 Draft，SDK #335 Open，兩者都未合併。Checkpoint 只保護可恢復狀態，不代表 acceptance PASS。
+- 從已有 clone 恢復：
+
+  ```powershell
+  git switch codex/lk-next-decision-loop
+  git submodule update --init vendor/learning-kernel-sdk
+  git -C vendor/learning-kernel-sdk switch codex/u1-classification-transfer-supply
+  ```
+
+- 從新 clone 恢復時先 fetch 並切換 Root PR branch，再初始化 submodule；若 checkout 是完整 SHA，使用 Root gitlink SDK SHA `1e46710473c4776cdf3a5806a7b4cf739fed8e82`。不要移動 SDK `main`，也不要清除使用者原工作目錄、SQLite、`.env` 或 Docker volumes。
+
 ## 使用者決定與目標
 
 - 起點是使用者提供的 Option 2 單頁 HTML，已在 `web/index.html`。使用者喜歡部署版的功能，但單頁 HTML 與先前網站有些差異；先以這份 HTML 為基線，實測後逐步修正。保留其視覺與操作意圖。
