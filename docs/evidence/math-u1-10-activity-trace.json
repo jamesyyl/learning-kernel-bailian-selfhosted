@@ -1,0 +1,679 @@
+{
+  "reportSchema": "math-u1-canonical-runtime-trace@1",
+  "status": "PASS",
+  "pack": {
+    "id": "org.learning-kernel.tw-math-g6-u1",
+    "version": "0.3.4",
+    "contentDigest": "sha256:aea207d8eb59619373203dcfaa74614b4b1b6273953257620be54956f6b1cc98"
+  },
+  "counts": {
+    "verifiedPoolEntries": 260,
+    "taskFamiliesWithPoolSupply": 26,
+    "completedActivities": 10,
+    "distinctActivityIds": 10,
+    "distinctPrompts": 10,
+    "persistedEvidenceIds": 10,
+    "persistedEvidenceRows": 53,
+    "mapPlacesWithCanonicalSurface": 17,
+    "taskFamiliesSelectedFromMap": 11,
+    "responseCapabilitiesFromMapSurfaces": 4,
+    "completedActivitiesAtMapPlaces": 17,
+    "distinctMapActivityIds": 17,
+    "mapEvidenceIds": 17,
+    "familyExplorationActivities": 26,
+    "familyExplorationEvidenceIds": 26,
+    "familiesWithCanonicalExplorationSurface": 26
+  },
+  "mapSurfaceTrace": [
+    {
+      "placeId": "u1-1/composite-number",
+      "taskFamilyId": "u1-1/family/classification-transfer",
+      "activityId": "generated/u1-1/family/classification-transfer/variant-0",
+      "prompt": "題目改成一次檢查一組數字。請從 2, 3, 4, 5 中選出所有質數。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/ba010d372f3549db9586c016851d6262",
+      "evidenceIds": [
+        "candidate-evidence-b7f4b3cd145068b27b7383c41ab905a86f3e31e1040927d62e74166ec2abe6d4"
+      ]
+    },
+    {
+      "placeId": "u1-1/factor-structure",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-0",
+      "prompt": "判斷 2 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/57d6bfeaf0ee4ae88d86f7e144d043b9",
+      "evidenceIds": [
+        "candidate-evidence-e741e7014ca924ea86b42a60fc690cf1dc5cfc0486e9ae875a38317f041b088a"
+      ]
+    },
+    {
+      "placeId": "u1-1/prime-number",
+      "taskFamilyId": "u1-1/family/classification-transfer",
+      "activityId": "generated/u1-1/family/classification-transfer/variant-1",
+      "prompt": "題目改成一次檢查一組數字。請從 3, 4, 5, 6 中選出所有質數。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/1d2fc532af8e47df80395b7a52754290",
+      "evidenceIds": [
+        "candidate-evidence-4d4a3d0d7949860fbd9aee66a45f63c5d10b1e161424857adaaf63349e56c9e6"
+      ]
+    },
+    {
+      "placeId": "u1-2/number-factorization-equivalence",
+      "taskFamilyId": "u1-2/family/factorization-reconstruction",
+      "activityId": "generated/u1-2/family/factorization-reconstruction/variant-0",
+      "prompt": "請讀出分解式 2×3×3 所代表的整數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/694ced2a9894422aa0f375314b9c035a",
+      "evidenceIds": [
+        "candidate-evidence-c04bfff5a6ab79f8c8216898f377af899af022438a46d6b62981981344be2c25"
+      ]
+    },
+    {
+      "placeId": "u1-2/prime-factor",
+      "taskFamilyId": "u1-2/family/factor-tree",
+      "activityId": "generated/u1-2/family/factor-tree/variant-0",
+      "prompt": "用因數樹完整分解 18。請輸入每一步的因數配對，直到末端都是質數。",
+      "responseCapability": "response.text@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/c3b781a1040d4ddf9beb9b90cc27e7dd",
+      "evidenceIds": [
+        "candidate-evidence-5957a38e727269b7001a076934d16050aac1002b45dfb82f0115eb1399c0a9d0"
+      ]
+    },
+    {
+      "placeId": "u1-2/prime-factorization",
+      "taskFamilyId": "u1-2/family/factorization-reconstruction",
+      "activityId": "generated/u1-2/family/factorization-reconstruction/variant-1",
+      "prompt": "請讀出分解式 2×2×2×3 所代表的整數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/6db384ace2434517a7731601427aa402",
+      "evidenceIds": [
+        "candidate-evidence-83b2787bb0a78a326094490c5abf7e2815f9f98ea62ae6c0c693e7142d7d809e"
+      ]
+    },
+    {
+      "placeId": "u1-3/common-factor",
+      "taskFamilyId": "u1-3/family/direct-greatest-common-factor",
+      "activityId": "generated/u1-3/family/direct-greatest-common-factor/variant-0",
+      "prompt": "求 12 和 18 的最大公因數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/aeacc406b19b413e807c708e99e13e9c",
+      "evidenceIds": [
+        "candidate-evidence-da0a29457d7df417cb948f12521c751e5111ab8b29f1490508ea8ef0c7c6bcc1"
+      ]
+    },
+    {
+      "placeId": "u1-3/coprime-relationship",
+      "taskFamilyId": "u1-3/family/coprime-classification",
+      "activityId": "generated/u1-3/family/coprime-classification/variant-0",
+      "prompt": "判斷 12 和 18 是否互質。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/5c1067c5bd054eb7883fe692db8c9f2e",
+      "evidenceIds": [
+        "candidate-evidence-a8f7a3233a445fad11367f6934811e600c345e934b0a80c1673f8b7c18dc317e"
+      ]
+    },
+    {
+      "placeId": "u1-3/greatest-common-factor",
+      "taskFamilyId": "u1-3/family/coprime-classification",
+      "activityId": "generated/u1-3/family/coprime-classification/variant-1",
+      "prompt": "判斷 24 和 36 是否互質。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/a320018ca429473096dc36a2afded4e4",
+      "evidenceIds": [
+        "candidate-evidence-1058663ab14367b2e64daa1affc6033fc1680b163d188f2043a79b4283a7f12c"
+      ]
+    },
+    {
+      "placeId": "u1-4/common-multiple",
+      "taskFamilyId": "u1-4/family/bounded-common-multiples",
+      "activityId": "generated/u1-4/family/bounded-common-multiples/variant-0",
+      "prompt": "列出不超過 30 的 3 和 4 的所有公倍數。請從選項中選出完整答案。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/77c718fe0b314c1f993b355743236a01",
+      "evidenceIds": [
+        "candidate-evidence-c5246070ed1b9ee4317e0cea83cc626f8765c585c4ee6a99de8f423a03a76b1e"
+      ]
+    },
+    {
+      "placeId": "u1-4/coprime-product-relation",
+      "taskFamilyId": "u1-4/family/coprime-product",
+      "activityId": "generated/u1-4/family/coprime-product/variant-0",
+      "prompt": "判斷 5 和 8 是否可以直接相乘來求最小公倍數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/83d1fdc31e454d7e88ed1d93d5413ebf",
+      "evidenceIds": [
+        "candidate-evidence-c35dfe138a256df6810c62c955505fd244a80c3ca88e0a22c6c043a7cb12f9d0"
+      ]
+    },
+    {
+      "placeId": "u1-4/least-common-multiple",
+      "taskFamilyId": "u1-4/family/coprime-product",
+      "activityId": "generated/u1-4/family/coprime-product/variant-1",
+      "prompt": "判斷 7 和 9 是否可以直接相乘來求最小公倍數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/20f44ff061184cdbbf1df51e02bd0a96",
+      "evidenceIds": [
+        "candidate-evidence-b5e751276601fe747778c54f0c9e14cda763e89309c858792c0d94eb17a712af"
+      ]
+    },
+    {
+      "placeId": "u1-5/contextual-answer",
+      "taskFamilyId": "u1-5/family/second-step-reasoning",
+      "activityId": "generated/u1-5/family/second-step-reasoning/variant-0",
+      "prompt": "12 公分和 18 公分的紙板切成最大相同正方形，已知每邊長 6 公分。可以切成幾個正方形？",
+      "responseCapability": "response.math@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/6e6fed8315ed426c9075299333e35742",
+      "evidenceIds": [
+        "candidate-evidence-c6b92c0758197d6081c7715bde32ded57914478df6667bdfd4361f1d292b0968"
+      ]
+    },
+    {
+      "placeId": "u1-5/method-choice",
+      "taskFamilyId": "u1-5/family/method-selection",
+      "activityId": "generated/u1-5/family/method-selection/variant-0",
+      "prompt": "已選定最大公因數模型；12=2×2×3；18=2×3×3。選出可完成此計算的方法。可複選。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/e981b5e9a2054259b01bef2a7f690c25",
+      "evidenceIds": [
+        "candidate-evidence-8b6e8d16329dd472d1e2911cf7402ede3acdc559a58fc679c13ff968c774dbf3"
+      ]
+    },
+    {
+      "placeId": "u1-5/model-choice",
+      "taskFamilyId": "u1-5/family/method-selection",
+      "activityId": "generated/u1-5/family/method-selection/variant-1",
+      "prompt": "已選定最小公倍數模型；24=2×2×2×3；36=2×2×3×3。選出可完成此計算的方法。可複選。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/37358ff31a604dd496b9cdda7a5c7d92",
+      "evidenceIds": [
+        "candidate-evidence-79dbd823454273edbc48b694bbf83f9dc3842c4cdf9945eb8b97262a1482dcd4"
+      ]
+    },
+    {
+      "placeId": "u1-5/model-result",
+      "taskFamilyId": "u1-5/family/second-step-reasoning",
+      "activityId": "generated/u1-5/family/second-step-reasoning/variant-1",
+      "prompt": "24 公分和 36 公分的紙板切成最大相同正方形，已知每邊長 12 公分。可以切成幾個正方形？",
+      "responseCapability": "response.math@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/e1daf405e18f411cb829c2ec16d957f4",
+      "evidenceIds": [
+        "candidate-evidence-6f80d643c8ad6ab555611cd95149ef5bc595c1e2893da31ba856180e887bfd5a"
+      ]
+    },
+    {
+      "placeId": "u1-5/problem-structure",
+      "taskFamilyId": "u1-5/family/model-selection",
+      "activityId": "generated/u1-5/family/model-selection/variant-0",
+      "prompt": "24 顆紅珠和 36 顆藍珠要分成內容相同的組，每組顏色數量都相同。請依數量關係選擇需要的數學模型。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/cd2f74ae6a034b5db32f6a4d5671b305",
+      "evidenceIds": [
+        "candidate-evidence-babeaf53fefd2f01e70875ea3a503e1d3904547dc725e0b814fb9f025b508325"
+      ]
+    }
+  ],
+  "mapRouteKinds": [
+    "delayed_confirmation",
+    "targeted_confirmation"
+  ],
+  "mapSurfaceResponseCapabilities": [
+    "response.math@1",
+    "response.multi-choice@1",
+    "response.single-choice@1",
+    "response.text@1"
+  ],
+  "taskFamiliesSelectedFromMap": [
+    "u1-1/family/classification-transfer",
+    "u1-1/family/direct-prime-composite-classification",
+    "u1-2/family/factor-tree",
+    "u1-2/family/factorization-reconstruction",
+    "u1-3/family/coprime-classification",
+    "u1-3/family/direct-greatest-common-factor",
+    "u1-4/family/bounded-common-multiples",
+    "u1-4/family/coprime-product",
+    "u1-5/family/method-selection",
+    "u1-5/family/model-selection",
+    "u1-5/family/second-step-reasoning"
+  ],
+  "familyExplorationTrace": [
+    {
+      "placeId": "u1-1/composite-number",
+      "taskFamilyId": "u1-1/family/classification-transfer",
+      "activityId": "generated/u1-1/family/classification-transfer/variant-2",
+      "prompt": "題目改成一次檢查一組數字。請從 4, 5, 6, 7 中選出所有質數。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-fae82f41a1bc9a7a858b8bb7066c32e8d5f7b8040c0d8514fc762988e6f01014"
+      ]
+    },
+    {
+      "placeId": "u1-1/composite-number",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-1",
+      "prompt": "判斷 3 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-3ccd2ace5c004654ec2c0658af717624fb8df1a7f29e0dc4567b4e4e5c3da6fb"
+      ]
+    },
+    {
+      "placeId": "u1-1/composite-number",
+      "taskFamilyId": "u1-1/family/divisibility-composite-screening",
+      "activityId": "generated/u1-1/family/divisibility-composite-screening/variant-0",
+      "prompt": "用 2、3、5 的整除關係檢查 14。選出能整除它的數。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-256191965d26549058aa8e0d2cc1cc3c98eb07802c01aa87d200d5e17fb9f016"
+      ]
+    },
+    {
+      "placeId": "u1-2/prime-factor",
+      "taskFamilyId": "u1-2/family/factor-tree",
+      "activityId": "generated/u1-2/family/factor-tree/variant-1",
+      "prompt": "用因數樹完整分解 24。請輸入每一步的因數配對，直到末端都是質數。",
+      "responseCapability": "response.text@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-399270dbc160861b98c9033f1207c650d32f45df658bb005b4d38e6f3364219f"
+      ]
+    },
+    {
+      "placeId": "u1-2/number-factorization-equivalence",
+      "taskFamilyId": "u1-2/family/factorization-reconstruction",
+      "activityId": "generated/u1-2/family/factorization-reconstruction/variant-2",
+      "prompt": "請讀出分解式 2×3×5 所代表的整數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-73fb033e1fb5e290b97dc0461508d3ad11dbcd5f93288ca41b0c17b7bc1ec959"
+      ]
+    },
+    {
+      "placeId": "u1-2/prime-factor",
+      "taskFamilyId": "u1-2/family/prime-factor-selection",
+      "activityId": "generated/u1-2/family/prime-factor-selection/variant-0",
+      "prompt": "在 18 的候選因數 2, 3, 5, 7, 9, 11, 13 中，選出真正的質因數。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-c796ff18d6fce06fe4c06c31da3e27d180527fddb7d35969897477bc048c478a"
+      ]
+    },
+    {
+      "placeId": "u1-2/prime-factor",
+      "taskFamilyId": "u1-2/family/prime-factorization-production",
+      "activityId": "generated/u1-2/family/prime-factorization-production/variant-0",
+      "prompt": "把 18 完整寫成質因數重複相乘的形式。",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-17437677f57054ffb9153d1443389b00e1b03678896bb0fa714bbddf7fe20225"
+      ]
+    },
+    {
+      "placeId": "u1-2/prime-factor",
+      "taskFamilyId": "u1-2/family/short-division",
+      "activityId": "generated/u1-2/family/short-division/variant-0",
+      "prompt": "用短除法完整分解 18。請依序輸入每個質數除數與商，直到商為 1。",
+      "responseCapability": "response.text@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-863d6907334f0fa1d0e6fead6fba26d693eed345fd92c9249260344fd4f01579"
+      ]
+    },
+    {
+      "placeId": "u1-3/coprime-relationship",
+      "taskFamilyId": "u1-3/family/coprime-classification",
+      "activityId": "generated/u1-3/family/coprime-classification/variant-2",
+      "prompt": "判斷 35 和 64 是否互質。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-a3502a86734d0749df2af62a201a30bf24e15a2c60f0590e0f73ab1a71382795"
+      ]
+    },
+    {
+      "placeId": "u1-3/common-factor",
+      "taskFamilyId": "u1-3/family/direct-greatest-common-factor",
+      "activityId": "generated/u1-3/family/direct-greatest-common-factor/variant-1",
+      "prompt": "求 24 和 36 的最大公因數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-92f4264eb9bdd42eb37ca867ae7ac115604fd83681d0c90a5833443ff5e38f41"
+      ]
+    },
+    {
+      "placeId": "u1-3/common-factor",
+      "taskFamilyId": "u1-3/family/given-prime-factorization",
+      "activityId": "generated/u1-3/family/given-prime-factorization/variant-0",
+      "prompt": "已知 12=2×2×3；18=2×3×3。不重新分解，求兩數的最大公因數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-1d5b2481666ed0a72bdaa450ca5a162064ef876ce929dd5f9fb12b51b6cb6650"
+      ]
+    },
+    {
+      "placeId": "u1-3/common-factor",
+      "taskFamilyId": "u1-3/family/method-selection",
+      "activityId": "generated/u1-3/family/method-selection/variant-0",
+      "prompt": "12=2×2×3；18=2×3×3。選出能正確完成最大公因數任務的方法。可複選。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-4ae869dd09efa3b812d72f0dc72e415c1a1b708cddc4c62fb04d777fbcfa4469"
+      ]
+    },
+    {
+      "placeId": "u1-3/common-factor",
+      "taskFamilyId": "u1-3/family/prime-factorization-method",
+      "activityId": "generated/u1-3/family/prime-factorization-method/variant-0",
+      "prompt": "用質因數分解法求 12 和 18 的最大公因數，輸入共同部分與結果。",
+      "responseCapability": "response.text@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-e16dc73c4a130049644befdc50f8855b9cc8e53ee629cc333b0748ae7ab507a6"
+      ]
+    },
+    {
+      "placeId": "u1-3/common-factor",
+      "taskFamilyId": "u1-3/family/short-division-method",
+      "activityId": "generated/u1-3/family/short-division-method/variant-0",
+      "prompt": "用共同短除法求 12 和 18 的最大公因數，輸入共同除數與結果。",
+      "responseCapability": "response.text@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-4ff1a0117da55c363e9da278362d9f524521e737006962a88d11c95eb1e565d5"
+      ]
+    },
+    {
+      "placeId": "u1-4/common-multiple",
+      "taskFamilyId": "u1-4/family/bounded-common-multiples",
+      "activityId": "generated/u1-4/family/bounded-common-multiples/variant-1",
+      "prompt": "列出不超過 48 的 4 和 6 的所有公倍數。請從選項中選出完整答案。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-afa8eb8b643bdde3ad14e3354d1fdda1bb4dea2f624d33537a80080cd918d03f"
+      ]
+    },
+    {
+      "placeId": "u1-4/coprime-product-relation",
+      "taskFamilyId": "u1-4/family/coprime-product",
+      "activityId": "generated/u1-4/family/coprime-product/variant-2",
+      "prompt": "判斷 8 和 15 是否可以直接相乘來求最小公倍數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-430f53c61b57d7dfd85651264405a48834f726c144b5ca4a3f0e06b16308c225"
+      ]
+    },
+    {
+      "placeId": "u1-4/common-multiple",
+      "taskFamilyId": "u1-4/family/direct-least-common-multiple",
+      "activityId": "generated/u1-4/family/direct-least-common-multiple/variant-0",
+      "prompt": "求 12 和 18 的最小公倍數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-cbbc7166c4c58feb6b3f6e865c5c8f25c86a10c8d43535571dc685f4807c68c5"
+      ]
+    },
+    {
+      "placeId": "u1-4/common-multiple",
+      "taskFamilyId": "u1-4/family/given-prime-factorization",
+      "activityId": "generated/u1-4/family/given-prime-factorization/variant-0",
+      "prompt": "已知 12=2×2×3；18=2×3×3。不重新分解，求兩數的最小公倍數。",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-07587f8f55d64b432eddadcdbc1434add8f994ccd0e9fb807794e90f916babce"
+      ]
+    },
+    {
+      "placeId": "u1-4/common-multiple",
+      "taskFamilyId": "u1-4/family/method-selection",
+      "activityId": "generated/u1-4/family/method-selection/variant-0",
+      "prompt": "12=2×2×3；18=2×3×3。選出能正確完成最小公倍數任務的方法。可複選。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-36df250e2d633ee16c0ecbc131ab48240fadcbdba97592c02ea66f578d10fa76"
+      ]
+    },
+    {
+      "placeId": "u1-4/common-multiple",
+      "taskFamilyId": "u1-4/family/prime-factorization-method",
+      "activityId": "generated/u1-4/family/prime-factorization-method/variant-0",
+      "prompt": "用質因數分解法求 12 和 18 的最小公倍數，輸入完整乘積與結果。",
+      "responseCapability": "response.text@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-0c56f15ca072a5645528355f2d5ca3949fe6b12a3b36a5259a7bbf8f1ceae3a6"
+      ]
+    },
+    {
+      "placeId": "u1-4/common-multiple",
+      "taskFamilyId": "u1-4/family/short-division-method",
+      "activityId": "generated/u1-4/family/short-division-method/variant-0",
+      "prompt": "用短除法求 12 和 18 的最小公倍數，輸入除數、剩餘數與結果。",
+      "responseCapability": "response.text@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-ac84a4e935a4b53faa266ace85b1bf05f1d03cb0d5f3eda7ac6cee54c7265512"
+      ]
+    },
+    {
+      "placeId": "u1-5/method-choice",
+      "taskFamilyId": "u1-5/family/method-selection",
+      "activityId": "generated/u1-5/family/method-selection/variant-2",
+      "prompt": "已選定最大公因數模型；35=5×7；64=2×2×2×2×2×2。選出可完成此計算的方法。可複選。",
+      "responseCapability": "response.multi-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-115fd48fb83161f5b4db6eb76d0f82ab251210e7c23aee6307e7324f2f9ac8ed"
+      ]
+    },
+    {
+      "placeId": "u1-5/model-choice",
+      "taskFamilyId": "u1-5/family/model-selection",
+      "activityId": "generated/u1-5/family/model-selection/variant-1",
+      "prompt": "甲燈每 4 秒亮一次，乙燈每 6 秒亮一次，兩燈何時再次同時亮？請依數量關係選擇需要的數學模型。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-06ca2199cee567820fe452c9bba7ec4f56e04a3cdf6c7c89055e0cf9e79f332b"
+      ]
+    },
+    {
+      "placeId": "u1-5/problem-structure",
+      "taskFamilyId": "u1-5/family/problem-structure-recognition",
+      "activityId": "generated/u1-5/family/problem-structure-recognition/variant-0",
+      "prompt": "24 顆紅珠和 36 顆藍珠要分成內容相同的組，每組顏色數量都相同。請辨認這段情境的數量結構。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-a3b0fcc4b4feb354a13c29a052ca7d60c0747803c8dfddbf007cdcd1852a2332"
+      ]
+    },
+    {
+      "placeId": "u1-5/contextual-answer",
+      "taskFamilyId": "u1-5/family/second-step-reasoning",
+      "activityId": "generated/u1-5/family/second-step-reasoning/variant-2",
+      "prompt": "35 公分和 64 公分的紙板切成最大相同正方形，已知每邊長 1 公分。可以切成幾個正方形？",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-45054a3715faf1ef9f28ad5ad641047ed145471fad0ceab85566fb4684b73d89"
+      ]
+    },
+    {
+      "placeId": "u1-5/method-choice",
+      "taskFamilyId": "u1-5/family/selected-model-execution",
+      "activityId": "generated/u1-5/family/selected-model-execution/variant-0",
+      "prompt": "已選定最大公因數模型；請計算 12 和 18 的結果。",
+      "responseCapability": "response.math@1",
+      "routeKind": "learner_exploration",
+      "evidenceIds": [
+        "candidate-evidence-28f46837f8fb3e19e294054933c77bd0306d6010239b845e61d41e2d3ea77f32"
+      ]
+    }
+  ],
+  "familyExplorationResponseCapabilities": [
+    "response.math@1",
+    "response.multi-choice@1",
+    "response.single-choice@1",
+    "response.text@1"
+  ],
+  "responseCapabilities": [
+    "response.single-choice@1"
+  ],
+  "routeKinds": [
+    "delayed_confirmation",
+    "targeted_confirmation"
+  ],
+  "trace": [
+    {
+      "index": 1,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-0",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 2 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "targeted_confirmation",
+      "decisionId": "decision/surface/f0e9a3f2790c43f0ab5102c0e4310c13",
+      "evidenceIds": [
+        "candidate-evidence-a3a13df8c12b41e3c515880fde77b54136f27556eb7ac1ee16387ec438816afc"
+      ]
+    },
+    {
+      "index": 2,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-1",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 3 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/e29bb4a8f85342eeba05a2384fcf0ca3",
+      "evidenceIds": [
+        "candidate-evidence-10a5c6912e9cd0d9f85b5de133423b6494b9263d3fd5efa098062fc05324acae"
+      ]
+    },
+    {
+      "index": 3,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-2",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 4 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/d9d74cb4ae9b421d877a7977c3c25368",
+      "evidenceIds": [
+        "candidate-evidence-8990954417c9fdc843564e87d64d4c231caa27d9d786116bffe9fca7ec1bc212"
+      ]
+    },
+    {
+      "index": 4,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-3",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 5 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/d504bce783f24f24821e65aae856bc8e",
+      "evidenceIds": [
+        "candidate-evidence-3f0d7b2dc12d3692e6cb96ade3e2d200322f051cb17b6d3d2892dd13fa7f7591"
+      ]
+    },
+    {
+      "index": 5,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-4",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 6 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/00f4d8aec2f744cf933f923af343ccfd",
+      "evidenceIds": [
+        "candidate-evidence-297cad2543a169a4938105b2493966e438a2e2352be69f57b7b0a2c076f1499e"
+      ]
+    },
+    {
+      "index": 6,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-5",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 7 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/0e685a91c74f491ab0a279faff545c66",
+      "evidenceIds": [
+        "candidate-evidence-4b69abf95217545aaf0ee086e276e176db21bd6050518620dde5dc1952a4ff0c"
+      ]
+    },
+    {
+      "index": 7,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-6",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 8 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/08094606b87244c48631d861dacc9de1",
+      "evidenceIds": [
+        "candidate-evidence-b6d531651c90b1abf25556e7152303e9349ba2e2607d00ba378ee0c6902944ec"
+      ]
+    },
+    {
+      "index": 8,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-7",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 9 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/15acb27a28ba4fe5981d718b153383c7",
+      "evidenceIds": [
+        "candidate-evidence-ddba2ae832dd487f5b0e2744d3594becc6bcb9f0964678eaed85d789fe8a2676"
+      ]
+    },
+    {
+      "index": 9,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-8",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 10 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/86e035490dea4d0badefe524f885b51c",
+      "evidenceIds": [
+        "candidate-evidence-96b6ef8ab92350ebd0657997fb839ba136ef112de7c33dd436122237dbbcebdf"
+      ]
+    },
+    {
+      "index": 10,
+      "activityId": "generated/u1-1/family/direct-prime-composite-classification/variant-9",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification",
+      "prompt": "判斷 11 是質數還是合數。",
+      "responseCapability": "response.single-choice@1",
+      "routeKind": "delayed_confirmation",
+      "decisionId": "decision/surface/8ceeea0af8eb43ed8b7b1984299349e2",
+      "evidenceIds": [
+        "candidate-evidence-5e7a1189db5f3d1508e61aeff013921076bc28e491f91929bd5f1a67056ebccf"
+      ]
+    }
+  ]
+}

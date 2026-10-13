@@ -15,7 +15,9 @@ RUNTIME_MIGRATIONS = (
 EXPECTED_SCHEMA_REVISION = 4
 
 
-def apply_runtime_migrations(connection: sqlite3.Connection, migration_dir: Path) -> int:
+def apply_runtime_migrations(
+    connection: sqlite3.Connection, migration_dir: Path
+) -> int:
     """Apply each pinned upstream migration once and reject changed history."""
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute(

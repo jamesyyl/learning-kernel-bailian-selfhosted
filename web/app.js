@@ -1,11 +1,13 @@
 const LK_LOCAL_LEARNER = "local-learner-001";
 const LK_LOCAL_ENVIRONMENT = "home";
 const LK_MATH_U1_PACK = "org.learning-kernel.tw-math-g6-u1";
+const LK_LEARNING_MAP_URL = "/api/learning-map";
+const LK_SELECTED_PLACE_KEY = `bailian:${LK_MATH_U1_PACK}:current-place`;
 const LK_SURFACE_URL = `/api/learners/${encodeURIComponent(LK_LOCAL_LEARNER)}/environments/${encodeURIComponent(LK_LOCAL_ENVIRONMENT)}/packs/${encodeURIComponent(LK_MATH_U1_PACK)}/surface`;
 const LK_OBSERVATIONS_URL = `/api/learners/${encodeURIComponent(LK_LOCAL_LEARNER)}/environments/${encodeURIComponent(LK_LOCAL_ENVIRONMENT)}/packs/${encodeURIComponent(LK_MATH_U1_PACK)}/observations`;
 const LK_SURFACE_REQUEST = {
   currentContext: {
-    currentPlaceLocalId: "u1-1/factor-structure",
+    currentPlaceLocalId: "",
     todayPractice: true,
   },
 };
@@ -24,6 +26,8 @@ let lkAnswersLocked = false;
 let lkNextStepIndex = null;
 let lkFinished = false;
 let lkPendingNextSurface = null;
+let lkLearningMap = null;
+let lkPendingExplorationFamilyId = null;
 
 const lkBaseRenderHome = renderHome;
 
@@ -43,7 +47,7 @@ renderHome = function renderHomeWithRuntimeAvailability() {
   if (title) title.textContent = isMath ? "數學 U1" : "尚未開放";
   if (prompt) {
     prompt.textContent = isMath
-      ? "練習質數、合數與整除關係。每一步作答都會交給本機 Runtime 保存。"
+      ? "從 U1-1 到 U1-5，沿著完整學習地圖探索數量關係；每一步作答都會交給本機 Runtime 保存。"
       : `${subjects[selected].name}目前尚未接通 Learning Kernel 活動。`;
   }
   if (reason) {
@@ -71,56 +75,222 @@ renderJourney = function renderRuntimeJourney() {
   const placeTitle = document.querySelector("#placeTitle");
   const placeDescription = document.querySelector("#placeDescription");
   const detailNote = document.querySelector("#journey .detail-note");
+  const roadsList = document.querySelector("#placeRoads");
+  const taskFamiliesList = document.querySelector("#placeTaskFamilies");
   const learnButton = document.querySelector("#learnAtPlace");
   const practiceButton = document.querySelector("#practiceAtPlace");
   if (!list) return;
 
+  const previousScrollTop = list.scrollTop;
   list.replaceChildren();
-  const item = document.createElement("li");
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = `journey-stop ${isMath ? "is-active" : "local-disabled"}`;
-  if (isMath) button.dataset.startSubject = "math";
-  button.disabled = !isMath;
-  button.setAttribute("aria-disabled", String(!isMath));
-  const icon = document.createElement("span");
-  icon.className = "stop-icon";
-  icon.textContent = isMath ? "U1" : "…";
-  const copy = document.createElement("span");
-  const strong = document.createElement("strong");
-  strong.textContent = isMath ? "數學 U1" : `${subjects[selected].name}尚未開放`;
-  const small = document.createElement("small");
-  small.textContent = isMath
-    ? "質數、合數與整除關係；依 Runtime 活動逐步作答。"
-    : "此科目尚未接通 Learning Kernel。";
-  copy.append(strong, small);
-  const state = document.createElement("span");
-  state.className = "stop-state";
-  state.textContent = isMath ? "已開放" : "準備中";
-  button.append(icon, copy, state);
-  item.append(button);
-  list.append(item);
+  if (!isMath) {
+    const item = document.createElement("li");
+    item.className = "journey-region-item";
+    const message = document.createElement("p");
+    message.className = "journey-map-loading";
+    message.textContent = `${subjects[selected].name}尚未接通 Learning Kernel。`;
+    item.append(message);
+    list.append(item);
+    if (placeSubject) placeSubject.textContent = subjects[selected].name;
+    if (placeTitle) placeTitle.textContent = "尚未開放";
+    if (placeDescription) placeDescription.textContent = `${subjects[selected].name}尚未接通 Learning Kernel 活動。`;
+    if (detailNote) detailNote.textContent = "目前只有數學 U1 可從 Learning Map 載入活動。";
+    roadsList?.replaceChildren();
+    taskFamiliesList?.replaceChildren();
+  } else if (!lkLearningMap) {
+    const item = document.createElement("li");
+    item.className = "journey-region-item";
+    const message = document.createElement("p");
+    message.className = "journey-map-loading";
+    message.textContent = "正在讀取數學 U1 的完整學習地圖…";
+    item.append(message);
+    list.append(item);
+    if (placeSubject) placeSubject.textContent = "數學 U1";
+    if (placeTitle) placeTitle.textContent = "正在載入學習地圖";
+    if (placeDescription) placeDescription.textContent = "地點與連線會直接來自已發布的 Knowledge Pack。";
+    if (detailNote) detailNote.textContent = "地圖載入後可從任一 Place 開始，或沿 Pack 路線切換地點。";
+    roadsList?.replaceChildren();
+    taskFamiliesList?.replaceChildren();
+  } else {
+    const placeById = new Map(lkLearningMap.places.map((place) => [place.id, place]));
+    const currentPlaceId = LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId;
 
-  if (placeSubject) placeSubject.textContent = subjects[selected].name;
-  if (placeTitle) placeTitle.textContent = isMath ? "數學 U1・質數與合數" : "尚未開放";
-  if (placeDescription) {
-    placeDescription.textContent = isMath
-      ? "從 Runtime 載入一個真實活動，完成兩個觀察步驟，並保存原始作答。"
-      : `${subjects[selected].name}尚未接通 Learning Kernel 活動。`;
-  }
-  if (detailNote) {
-    detailNote.textContent = isMath
-      ? "數學 U1 可再次進入；其他科目尚未接通。"
-      : "目前 Runtime 尚未接通這個科目。";
+    for (const region of lkLearningMap.regions) {
+      const item = document.createElement("li");
+      item.className = "journey-region-item";
+      const heading = document.createElement("div");
+      heading.className = "journey-region-heading";
+      const regionId = document.createElement("span");
+      regionId.className = "journey-region-id";
+      regionId.textContent = region.id.toUpperCase();
+      const regionTitle = document.createElement("h3");
+      regionTitle.textContent = region.title;
+      heading.append(regionId, regionTitle);
+      const places = document.createElement("div");
+      places.className = "journey-region-places";
+
+      for (const placeId of region.placeIds) {
+        const place = placeById.get(placeId);
+        if (!place) continue;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `journey-map-place ${placeId === currentPlaceId ? "is-current" : ""}`;
+        button.dataset.packPlaceId = place.id;
+        button.setAttribute("aria-pressed", String(placeId === currentPlaceId));
+        button.textContent = place.title;
+        places.append(button);
+      }
+      item.append(heading, places);
+      list.append(item);
+    }
+
+    const selectedPlace = placeById.get(currentPlaceId) || placeById.get(lkLearningMap.entryPoints[0]?.placeId);
+    if (selectedPlace) {
+      const region = lkLearningMap.regions.find((item) => item.id === selectedPlace.regionId);
+      if (placeSubject) placeSubject.textContent = region?.title || "數學 U1";
+      if (placeTitle) placeTitle.textContent = selectedPlace.title;
+      if (placeDescription) {
+        placeDescription.textContent = selectedPlace.realWorldMeaning
+          ? `${selectedPlace.description} ${selectedPlace.realWorldMeaning}`
+          : selectedPlace.description;
+      }
+      if (roadsList) {
+        roadsList.replaceChildren();
+        const connected = lkLearningMap.roads.filter(
+          (road) => road.fromPlaceId === selectedPlace.id || road.toPlaceId === selectedPlace.id,
+        );
+        for (const road of connected) {
+          const forward = road.fromPlaceId === selectedPlace.id;
+          const destinationId = forward ? road.toPlaceId : road.fromPlaceId;
+          const destination = placeById.get(destinationId);
+          const item = document.createElement("li");
+          item.className = `journey-road journey-road-${road.kind}`;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "journey-road-link";
+          button.dataset.packPlaceId = destinationId;
+          const direction = document.createElement("span");
+          direction.className = "journey-road-direction";
+          direction.textContent = forward ? "→" : "←";
+          const copy = document.createElement("span");
+          copy.className = "journey-road-copy";
+          const title = document.createElement("strong");
+          title.textContent = road.title;
+          const destinationLabel = document.createElement("small");
+          destinationLabel.textContent = `${forward ? "往" : "回到"} ${destination?.title || destinationId}`;
+          copy.append(title, destinationLabel);
+          const kind = document.createElement("span");
+          kind.className = "journey-road-kind";
+          kind.textContent = road.kind === "remediation" ? "補強" : road.kind === "return" ? "返回" : "學習";
+          button.append(direction, copy, kind);
+          item.append(button);
+          roadsList.append(item);
+        }
+      }
+      if (taskFamiliesList) {
+        taskFamiliesList.replaceChildren();
+        const familyById = new Map(
+          lkLearningMap.taskFamilies.map((family) => [family.id, family]),
+        );
+        for (const familyId of selectedPlace.taskFamilyIds || []) {
+          const family = familyById.get(familyId);
+          if (!family) continue;
+          const item = document.createElement("li");
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "journey-family-choice";
+          button.dataset.packTaskFamilyId = family.id;
+          const title = document.createElement("strong");
+          title.textContent = family.title;
+          const purpose = document.createElement("small");
+          purpose.textContent = family.observationPurpose;
+          const action = document.createElement("span");
+          action.className = "journey-family-action";
+          action.textContent = "探索這個做法";
+          button.append(title, purpose, action);
+          item.append(button);
+          taskFamiliesList.append(item);
+        }
+      }
+    }
+    if (detailNote) {
+      detailNote.textContent = `地圖列出 Pack 的全部 ${lkLearningMap.places.length} 個 Place 與 ${lkLearningMap.roads.length} 條 Road。可以讓 Learning Kernel 依學習紀錄安排下一步，也可以選擇這裡的學習做法。`;
+    }
   }
   for (const control of [learnButton, practiceButton]) {
     if (control) {
-      control.disabled = !isMath;
-      control.classList.toggle("local-disabled", !isMath);
-      control.setAttribute("aria-disabled", String(!isMath));
+      const disabled = !isMath || !lkLearningMap;
+      control.disabled = disabled;
+      control.classList.toggle("local-disabled", disabled);
+      control.setAttribute("aria-disabled", String(disabled));
     }
   }
+  if (isMath && lkLearningMap) list.scrollTop = previousScrollTop;
 };
+
+function lkSelectPackPlace(placeId) {
+  if (!lkLearningMap?.places.some((place) => place.id === placeId)) return;
+  lkRememberPackPlace(placeId);
+  renderJourney();
+}
+
+function lkRememberPackPlace(placeId) {
+  LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId = placeId;
+  try {
+    window.localStorage.setItem(LK_SELECTED_PLACE_KEY, placeId);
+  } catch {
+    // The current selection still works for this tab when browser storage is unavailable.
+  }
+}
+
+function lkAdoptSurfaceRoute(surface) {
+  const refs = surface?.lineage?.semanticContentRefs;
+  const target = Array.isArray(refs) ? refs.at(-1)?.localId : null;
+  if (typeof target !== "string" || !lkLearningMap?.places.some((place) => place.id === target)) {
+    return;
+  }
+  lkRememberPackPlace(target);
+  if (document.querySelector("#journey")?.hidden === false) renderJourney();
+}
+
+async function lkLoadLearningMap() {
+  if (lkLearningMap) return true;
+  try {
+    const response = await fetch(LK_LEARNING_MAP_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error("learning_map_unavailable");
+    const body = await response.json();
+    if (
+      body.schemaVersion !== "learning-kernel.learning-map@1" ||
+      body.pack?.id !== LK_MATH_U1_PACK ||
+      !Array.isArray(body.entryPoints) ||
+      !Array.isArray(body.regions) ||
+      !Array.isArray(body.places) ||
+      !Array.isArray(body.roads) ||
+      !Array.isArray(body.taskFamilies) ||
+      body.places.length === 0
+    ) {
+      throw new Error("unexpected_learning_map_schema");
+    }
+    lkLearningMap = body;
+    let savedPlaceId = "";
+    try {
+      savedPlaceId = window.localStorage.getItem(LK_SELECTED_PLACE_KEY) || "";
+    } catch {
+      savedPlaceId = "";
+    }
+    const entryPlaceId = body.entryPoints[0]?.placeId || body.places[0].id;
+    const selectedPlaceId = body.places.some((place) => place.id === savedPlaceId)
+      ? savedPlaceId
+      : entryPlaceId;
+    LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId = selectedPlaceId;
+    renderJourney();
+    return true;
+  } catch {
+    lkLearningMap = null;
+    renderJourney();
+    return false;
+  }
+}
 
 renderParent = function renderUnavailableParent() {
   const page = document.querySelector("#parent");
@@ -291,11 +461,22 @@ async function lkStartU1() {
     lkToast(`${subjects[selected].name}尚未接通 Learning Kernel，目前不能開始活動。`);
     return;
   }
+  if (!(await lkLoadLearningMap())) {
+    lkToast("目前無法載入數學 U1 學習地圖，請稍後再試。");
+    return;
+  }
+  const currentPlace = lkLearningMap.places.find(
+    (place) => place.id === LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId,
+  );
+  if (!currentPlace) {
+    lkToast("這個學習地點不在目前的 Pack 地圖中。");
+    return;
+  }
   lkClearActivity();
   document.querySelector("#activityModeLabel").textContent = "數學 U1・本機練習";
-  document.querySelector("#activityTitle").textContent = "數學 U1｜質數與合數";
-  document.querySelector("#activitySubject").textContent = "數學 U1";
-  document.querySelector("#activitySubtopic").textContent = "質數、合數與整除關係";
+  document.querySelector("#activityTitle").textContent = `數學 U1｜${currentPlace.title}`;
+  document.querySelector("#activitySubject").textContent = currentPlace.regionId.toUpperCase();
+  document.querySelector("#activitySubtopic").textContent = currentPlace.title;
   document.querySelector("#activityQuestion").textContent = "正在向 Learning Kernel 載入活動…";
   document.querySelector("#answerHost").replaceChildren();
   document.querySelector("#hintText").textContent = "活動載入後，可以先自己想想，也可以查看 Runtime 提供的提示。";
@@ -304,10 +485,18 @@ async function lkStartU1() {
   goPage("activity");
 
   try {
+    const startRequest = {
+      currentContext: { ...LK_SURFACE_REQUEST.currentContext },
+    };
+    const requestedFamilyId = lkPendingExplorationFamilyId;
+    lkPendingExplorationFamilyId = null;
+    if (requestedFamilyId) {
+      startRequest.currentContext.learnerExplorationTaskFamilyIds = [requestedFamilyId];
+    }
     const response = await fetch(LK_SURFACE_URL, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(LK_SURFACE_REQUEST),
+      body: JSON.stringify(startRequest),
       cache: "no-store",
     });
     const body = await response.json();
@@ -315,7 +504,7 @@ async function lkStartU1() {
     if (body.schemaVersion !== "learning-kernel.surface-ir@1") {
       throw new Error("unexpected_surface_schema");
     }
-    lkLoadSurface(body, "數學 U1｜質數與合數");
+    lkLoadSurface(body, body.surface?.payload?.presentation?.title || `數學 U1｜${currentPlace.title}`);
   } catch (error) {
     const code = error instanceof Error ? error.message : "runtime_unavailable";
     document.querySelector("#activityQuestion").textContent = "目前無法載入數學 U1 活動";
@@ -335,6 +524,16 @@ function lkLoadSurface(body, title) {
   }
   lkSurface = body;
   lkPoints = points;
+  lkAdoptSurfaceRoute(body);
+  const semanticRefs = body.lineage?.semanticContentRefs;
+  const selectedPlaceId = Array.isArray(semanticRefs)
+    ? semanticRefs.at(-1)?.localId
+    : null;
+  const selectedPlace = lkLearningMap?.places.find((place) => place.id === selectedPlaceId);
+  if (selectedPlace) {
+    document.querySelector("#activitySubject").textContent = selectedPlace.regionId.toUpperCase();
+    document.querySelector("#activitySubtopic").textContent = selectedPlace.title;
+  }
   document.querySelector("#activityTitle").textContent = title;
   document.querySelector("#questionLayout").hidden = false;
   document.querySelector("#lkNextDecision").hidden = true;
@@ -434,7 +633,7 @@ function lkStartRecommendedSurface() {
   const surface = lkPendingNextSurface;
   lkPendingNextSurface = null;
   try {
-    lkLoadSurface(surface, "數學 U1｜LK 推薦練習");
+    lkLoadSurface(surface, surface.surface?.payload?.presentation?.title || "數學 U1｜LK 推薦練習");
   } catch {
     lkShowRecommendationMessage(
       "目前無法開始這個活動",
@@ -452,7 +651,12 @@ function lkRenderStep(stepIndex) {
   const blocks = Array.isArray(step.blocks) ? step.blocks : [];
   const contentBlocks = blocks.filter((block) => block.capability === "content.text@1");
   lkResponseBlock = blocks.find((block) =>
-    ["response.single-choice@1", "response.multi-choice@1"].includes(block.capability),
+    [
+      "response.single-choice@1",
+      "response.multi-choice@1",
+      "response.math@1",
+      "response.text@1",
+    ].includes(block.capability),
   );
   lkActiveStep = { step, stepIndex, point };
   lkResponseValue = lkResponseBlock?.capability === "response.multi-choice@1" ? [] : null;
@@ -492,7 +696,11 @@ function lkRenderStep(stepIndex) {
       context.textContent = contentBlocks.slice(1).map((block) => block.props?.text || "").filter(Boolean).join(" ");
       answerHost.append(context);
     }
-    lkRenderChoices(lkResponseBlock);
+    if (["response.single-choice@1", "response.multi-choice@1"].includes(lkResponseBlock.capability)) {
+      lkRenderChoices(lkResponseBlock);
+    } else {
+      lkRenderFreeResponse(lkResponseBlock);
+    }
   }
 
   lkRenderHint(step.support?.hints || []);
@@ -506,7 +714,9 @@ function lkRenderChoices(block) {
   list.setAttribute("role", block.capability === "response.multi-choice@1" ? "group" : "radiogroup");
   list.setAttribute(
     "aria-label",
-    block.capability === "response.multi-choice@1" ? "選擇可整除的數" : "選擇一個答案",
+    block.capability === "response.multi-choice@1"
+      ? "選擇所有符合條件的答案"
+      : "選擇一個答案",
   );
 
   choices.forEach((choice, index) => {
@@ -532,6 +742,39 @@ function lkRenderChoices(block) {
   note.className = "runtime-choice-note";
   note.textContent = block.capability === "response.multi-choice@1" ? "可複選，選好後送出。" : "選一個答案後送出。";
   document.querySelector("#answerHost").append(list, note);
+}
+
+function lkRenderFreeResponse(block) {
+  const props = block.props || {};
+  const isText = block.capability === "response.text@1";
+  const label = document.createElement("label");
+  label.className = "runtime-response-label";
+  label.textContent = props.label || (isText ? "輸入作答" : "輸入數學答案");
+
+  const field = document.createElement(isText ? "textarea" : "input");
+  field.className = "runtime-free-response";
+  field.dataset.runtimeFreeResponse = "true";
+  field.name = typeof props.name === "string" ? props.name : "learner-response";
+  field.setAttribute("aria-label", label.textContent);
+  field.setAttribute("autocomplete", "off");
+  if (isText) {
+    field.rows = 3;
+    field.placeholder = "輸入你的想法或解題步驟";
+  } else {
+    field.type = "text";
+    field.inputMode = props.profile === "factorization" ? "text" : "numeric";
+    field.placeholder = props.profile === "factorization" ? "例如：2×3×3" : "輸入答案";
+  }
+
+  const note = document.createElement("p");
+  note.className = "runtime-choice-note";
+  note.textContent = props.profile === "factorization"
+    ? "用乘號連接質因數，不需要指數記號。"
+    : "答案會交由 Learning Kernel 判斷並保存。";
+  document.querySelector("#answerHost").append(label, field, note);
+  field.addEventListener("input", () => {
+    lkResponseValue = field.value;
+  });
 }
 
 function lkSelectChoice(button) {
@@ -594,12 +837,14 @@ function lkShowHint() {
 function lkCapturePayload() {
   const { step, stepIndex, point } = lkActiveStep;
   const multi = lkResponseBlock.capability === "response.multi-choice@1";
-  const value = lkResponseValue;
+  const freeResponse = ["response.math@1", "response.text@1"].includes(lkResponseBlock.capability);
+  const responseField = freeResponse ? document.querySelector("[data-runtime-free-response]") : null;
+  const value = freeResponse ? responseField?.value ?? "" : lkResponseValue;
   if (multi && (!Array.isArray(value) || value.length < Number(lkResponseBlock.props?.minSelections || 1))) {
     throw new Error("請先選擇題目要求數量的答案。");
   }
-  if (!multi && (typeof value !== "string" || value.length === 0)) {
-    throw new Error("請先選一個答案。");
+  if (!multi && (typeof value !== "string" || value.trim().length === 0)) {
+    throw new Error(freeResponse ? "請先輸入作答內容。" : "請先選一個答案。");
   }
 
   const capturedAtMs = Math.max(Date.now(), lkLastCapturedAtMs + 1);
@@ -697,6 +942,8 @@ async function lkSubmitAnswer() {
     if (verdict === "incorrect") {
       lkAttemptOrdinal = capture.attempt.attemptOrdinal + 1;
       lkResponseValue = lkResponseBlock.capability === "response.multi-choice@1" ? [] : null;
+      const freeResponse = document.querySelector("[data-runtime-free-response]");
+      if (freeResponse) freeResponse.value = "";
       lkUsedHintIds = [];
       lkAnswersLocked = false;
       lkStepStartedAt = Date.now();
@@ -740,6 +987,10 @@ function lkSetAnswerChoicesDisabled(disabled) {
     choice.disabled = disabled;
     choice.setAttribute("aria-disabled", String(disabled));
   });
+  document.querySelectorAll("[data-runtime-free-response]").forEach((field) => {
+    field.disabled = disabled;
+    field.setAttribute("aria-disabled", String(disabled));
+  });
 }
 
 function lkClearChoiceSelection() {
@@ -764,15 +1015,32 @@ function lkHandleClick(event) {
   if (!target) return;
 
   const answer = target.closest(".runtime-answer-choice");
+  const familyChoice = target.closest("[data-pack-task-family-id]");
   const start = target.closest("[data-start-subject]");
   const modeButton = target.closest("[data-mode]");
   const submitButton = target.closest("#submitAnswer");
   const nextButton = target.closest("#nextActivity");
   const hintButton = target.closest("#hintButtonAside");
+  const mapPlace = target.closest("[data-pack-place-id]");
   const placeButton = target.closest("#learnAtPlace, #practiceAtPlace");
   const recommendedButton = target.closest("#startRecommended");
   const startLkRecommended = target.closest("#startLkRecommended");
   const returnToJourney = target.closest("#returnToJourney");
+
+  if (familyChoice) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    lkPendingExplorationFamilyId = familyChoice.dataset.packTaskFamilyId || null;
+    void lkStartU1();
+    return;
+  }
+
+  if (mapPlace) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    lkSelectPackPlace(mapPlace.dataset.packPlaceId || "");
+    return;
+  }
 
   if (answer) {
     event.preventDefault();
@@ -864,6 +1132,7 @@ selectedStop = 0;
 renderSubjectTabs();
 renderHome();
 renderJourney();
+void lkLoadLearningMap();
 renderParent();
 lkShowUnavailableGrowth();
 lkUpdateShell();

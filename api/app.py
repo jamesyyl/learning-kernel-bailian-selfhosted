@@ -18,11 +18,12 @@ from api.sqlite_d1 import SqliteD1Database
 
 _LOGGER = logging.getLogger("bailian_runtime")
 _MAX_REQUEST_BYTES = 4_000_000
+_LEARNING_MAP_PATH = "/api/learning-map"
 _LEARNER_ROUTE = re.compile(
     r"^/api/learners/[^/]+/environments/[^/]+/packs/[^/]+/"
     r"(?:surface|observations)$"
 )
-_SDK_SOURCE_SHA = "ae263228d1d8a955a7ef8c40ef3a062f0ace8026"
+_SDK_SOURCE_SHA = "1e46710473c4776cdf3a5806a7b4cf739fed8e82"
 
 
 def _json_error(status: int, error: str) -> tuple[int, bytes, dict[str, str]]:
@@ -33,6 +34,8 @@ def _json_error(status: int, error: str) -> tuple[int, bytes, dict[str, str]]:
 def _learner_route_allowed(method: str, path: str) -> bool:
     """Keep the browser boundary to Surface reads and raw-observation writes."""
     if path == "/api/ready":
+        return method == "GET"
+    if path == _LEARNING_MAP_PATH:
         return method == "GET"
     if _LEARNER_ROUTE.fullmatch(path) is None:
         return False
@@ -112,6 +115,26 @@ class _RuntimeRequestHandler(BaseHTTPRequestHandler):
 
         if not is_valid_service_binding_secret(expected_secret, supplied_secret):
             self._send(*_json_error(404, "not_found"))
+            return
+
+        if parsed.path == _LEARNING_MAP_PATH:
+            try:
+                from api.learning_map import learning_map_payload
+
+                payload = json.dumps(
+                    learning_map_payload(),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            except Exception:
+                _LOGGER.exception("Learning Map read failed")
+                self._send(*_json_error(503, "learning_map_unavailable"))
+                return
+            self._send(
+                200,
+                payload,
+                {"content-type": "application/json; charset=utf-8"},
+            )
             return
 
         body: bytes | None = None

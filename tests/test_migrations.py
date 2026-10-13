@@ -35,7 +35,9 @@ class RuntimeMigrationTests(unittest.TestCase):
                 + f"VALUES ('schema_revision', '{index}') "
                 + "ON CONFLICT(key) DO UPDATE SET value = excluded.value;\n"
             )
-            self.migration_dir.joinpath(migration_name).write_text(sql, encoding="utf-8")
+            self.migration_dir.joinpath(migration_name).write_text(
+                sql, encoding="utf-8"
+            )
 
     def test_applies_in_order_and_is_idempotent(self) -> None:
         self._write_migrations()

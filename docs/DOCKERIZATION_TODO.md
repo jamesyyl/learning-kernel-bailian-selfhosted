@@ -4,10 +4,10 @@
 
 - UI 基線：使用收到的 `bailian-option-2-subject-cards.html`，保存在 `web/index.html`；功能修改都從這份開始。
 - 新 repo：`jamesyyl/learning-kernel-bailian-selfhosted`，與原百煉獨立。
-- PR #3 本機工作分支：`codex/lk-next-decision-loop`（從 `origin/main@5e5fae53426c23a9b2c2ba57ac5882b341867e99` 建立）。
+- PR #3 工作分支：`codex/lk-next-decision-loop`（從 `origin/main@5e5fae53426c23a9b2c2ba57ac5882b341867e99` 建立）；Issue #4 的全 U1 Map/Pool/Surface 本機實作已完成。
 - PR #1：[Pull Request #1](https://github.com/jamesyyl/learning-kernel-bailian-selfhosted/pull/1)。
 - PR #2：[Pull Request #2](https://github.com/jamesyyl/learning-kernel-bailian-selfhosted/pull/2)，已合併至 main。
-- PR #3 尚未建立；本機驗收與發布阻礙見下方。
+- Root PR #3 保持 Open Draft；SDK PR #335 保持 Open、未合併。依賴順序為先 SDK、再 Root；沒有 merge 授權。
 - 原 `learning-kernel-bailian` 未修改；canonical SDK `main` 未修改。PR #3 的 Pack 供應補足只在獨立 SDK branch。
 
 ## 順序與狀態
@@ -20,7 +20,7 @@
 | 3 | 準備 U1 Pack 與合法 Activity Pool 供應 | 本機通過（2026-10-12） | WSL Docker build 後，`docker compose exec runtime python -m api.seed_u1` 首次及再次執行皆成功；同源 Surface HTTP 200、schema `learning-kernel.surface-ir@1`、Pack 0.3.1。 |
 | 4 | 把 Option 2 練習頁接到 LK | 程式已寫；本機瀏覽器通過（2026-10-12） | 首頁選數學 U1、載入真實 Surface、完成單選及多選兩步、每步收到 Runtime 保存回覆；頁面只送 raw observation，沒有瀏覽器判分。未接通科目與學習摘要標示尚未開放。 |
 | 4.5 | LK 判斷結果與孩子可理解的回饋 | PR #2 已合併 | pinned LK SDK 是 correct/incorrect/indeterminate 唯一判斷來源。百煉只呈現安全 verdict/message/action；答錯留在原題並可重試，correct/indeterminate 依 Runtime directive；前端不取得標準答案或判分規則。exact same-request replay 使用 SQLite response cache。 |
-| 4.6 | LK Next Decision 與實際活動推薦 | PR #3 本機驗收通過；Draft PR 受阻 | 完成活動後以原 U1-1 session context 呼叫既有 `/surface`，不指定 candidate；只顯示 SDK 回傳的可供應 Surface，孩子可選擇開始或返回旅程。LK route reason 由前端做文案映射，不含判分或推薦演算法。Pack 0.3.2 新增經驗證的分類轉移 Activity/Pool entry。GitHub 拒絕 SDK 分支推送，PR #3 尚未發布。 |
+| 4.6 | LK Next Decision 與實際活動推薦 | Issue #4 本機全 U1 驗收完成；PR #3 保持 Draft | canonical Runtime 依 Evidence+Map 決策；Root Map 顯示全部 5 Regions／17 Places／37 Roads，26 Families 可由對應 Place 探索。Pack 0.3.4 有 26 個 generator registration、260 個獨立驗證並通過 Runtime admission 的變體；同 learner 連續 10 個不同 Activities，Map walkthrough 17 Places、Family exploration 26/26 均有 Evidence。真實瀏覽器核對六種 response profile。見 2026-10-14 evidence。 |
 | 5 | NAS 持久化與存取邊界 | 未驗證（不阻擋本機使用） | 本機 bind mount 的 SQLite 已保存 observation/attempt/evidence，Runtime 重啟後計數不變；FnOS/NAS 路徑、區網存取與正式部署仍待另行驗收。此版沒有帳號登入。 |
 | 6 | 簡單 SQLite 備份（後置） | 暫緩，不阻擋開發 | 先完成 LK 活動與作答流程；有正式學習資料後，再加入本機資料庫快照和還原。 |
 | 7 | FnOS/N100 驗收 | 未完成，依賴 2–5 | linux/amd64 冷啟、重啟、資料保存、raw observation 通過；備份後續補上。 |
@@ -49,7 +49,16 @@
 - 兩輪瀏覽器驗收後，隔離 SQLite 共保存 10 筆 observation、10 條 attempt chain、10 筆 trusted evidence 與 10 筆 exact-request response-cache 記錄。每輪 attempt ordinal/count/retryCount 依序為 `1/1/0, 2/2/1`（單選）及 `1/1/0, 2/2/1, 3/3/2`（多選）。Runtime 重啟後 readiness 與資料可讀；相同 HTTP 請求 replay 測試回傳相同 response，對應資料筆數不變。
 - PR #2 已合併至 main；NAS 正式部署與備份／還原尚未驗收，其他科目與模式仍顯示未開放。
 
-## PR #3 LK Next Decision 本機驗收（2026-10-13）
+## Issue #4 全量 Math U1 本機驗收（2026-10-14）
+
+- Pack 0.3.4 digest `sha256:aea207d8eb59619373203dcfaa74614b4b1b6273953257620be54956f6b1cc98`。5 Regions、17 Places、37 Roads、24 Capabilities、26 Task Families、26 Generator Requirements；7 個 reviewed Fixed Activities／16 points 保留，另有 26 個 Family 單點錨點，合計 33 Activities／42 points。原 Pack 0.3.2 artifact digest `sha256:5feac5c62f0510ef2ecc9851e06d15e879e6e5095838771b35543b534364fed3` 保持不變。
+- Exact-Family deterministic generator registrations 對 26 個 Families 各生成 10 個不同 Activity，共 260 候選；所有候選均通過獨立 verifier、Pack validators 與 Runtime Pool admission。每個 Family 有 10 個不同 prompt/activity ID。
+- Root full test suite：19 passed；`node --check web/app.js`、Python `compileall`、Ruff 與改動檔 format 通過。SDK focused suite：181 passed、2 個已確認在乾淨 PR #335 基線也會失敗的舊 D1 knowledge-read tests 排除。另確認 7 個 Worker readiness tests 在乾淨基線也失敗；未改 Cloudflare/D1 readiness 部分。GitHub Actions 未手動啟動。
+- Runtime/隔離 SQLite 同 learner 完成 10 個不同生成 Activity ID／題目；Map 上 17/17 Place 取得 canonical Surface/Evidence，Family exploration 26/26 取得 Surface/Evidence。Matrix：`docs/evidence/math-u1-supply-matrix-final-0.3.4.json`；trace：`docs/evidence/math-u1-10-activity-trace.json`。
+- Codex in-app Chromium 顯示完整 Map；實際沿 Road 從 U1-2→U1-3→U1-5，作答單選、多選、multi-classification、integer、structured-factorization、free text；全部由 Runtime 判定正確。單選錯答留題，可重試答對；初始題 2 的 Next Decision 回傳不同的題 3。詳細：`docs/evidence/math-u1-browser-acceptance-2026-10-14.json`。
+- Local browser acceptance host 使用 TemporaryDirectory SQLite；沒有建置或操作 Docker，也沒有觸及使用者原始 checkout/SQLite。SDK #335、Root #3 均不合併，等待使用者體驗與明確授權。
+
+## PR #3 LK Next Decision 舊驗收（2026-10-13；由以上 Issue #4 驗收更新取代）
 
 - 基於 `origin/main@5e5fae53426c23a9b2c2ba57ac5882b341867e99` 建立 `codex/lk-next-decision-loop`。pinned SDK 原 commit 為 `b63404173e39a37685e9914523ba3704ac1664ad`；Phase 7.9.4 已有 Evidence→Learner State→legal route→Next Decision→Activity Pool 的 canonical 路徑。缺口是 LK 可選到的 U1.1 transfer Task Family 沒有固定 Pack Activity/Pool 供應。
 - 在私有 SDK 獨立分支 `codex/u1-classification-transfer-supply` 加入 Pack 0.3.2 transfer Activity、deterministic generator、獨立 verifier 與 artifact；SDK commit `ae263228d1d8a955a7ef8c40ef3a062f0ace8026`，保留原 0.3.1 artifact。沒有改 recommender、evaluator 或 SDK main。GitHub 以 GH007 拒絕推送該新分支；此階段明確不處理 Git Email，因此 SDK 分支未發布，PR #3 不能建立。
@@ -63,4 +72,4 @@
 
 ## 目前不可用的部分
 
-PR #1、PR #2 已合併。PR #3 的 LK Next Decision 接線已在本機完成驗收，但私有 SDK branch push 被 GitHub GH007 阻擋，SDK commit 尚不可由遠端取得，因此 PR #3 尚未建立且本工作分支尚未發布。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime；更廣的 U1 題目覆蓋、FnOS/NAS 正式部署、區網存取邊界與備份仍未完成。
+PR #1、PR #2 已合併。Issue #4 的 U1 full Map/navigation/generation/Pool/Surface implementation 已完成本機驗收；Root PR #3 保持 Draft，SDK PR #335 保持未合併。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime；FnOS/NAS 正式部署、區網存取邊界與備份仍未驗證。SDK PR #335 基線的兩個 D1 knowledge-read tests 與七個 Worker readiness tests 有獨立既有失敗，詳見 local handoff；不在本任務範圍。

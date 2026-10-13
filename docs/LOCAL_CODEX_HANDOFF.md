@@ -1,6 +1,16 @@
 # 本地 Codex 交接：Option 2 自架開發
 
-更新：2026-10-13。PR #1 merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`、PR #2 均已合併。PR #3「LK Next Decision」本機實作與驗收已完成；root 分支 `codex/lk-next-decision-loop` 從 `origin/main@5e5fae53426c23a9b2c2ba57ac5882b341867e99` 建立。因必要的私有 SDK branch push 被 GitHub GH007 拒絕，SDK commit 尚不可從遠端取得；沒有建立 PR #3 Draft，也沒有推送 root 分支。此文件更新聚焦 PR #3 恢復與發布狀態。
+更新：2026-10-14。PR #1 merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`、PR #2 均已合併。Issue #4 的 Math U1 全 Map、Pool/Generation、Surface 作答能力已在隔離副本實作並完成本機 Runtime 與真實瀏覽器驗收。Root PR #3 保持 Draft、SDK PR #335 保持未合併；使用者的原始 checkout/WIP、SQLite 與 Docker 均未操作。
+
+## Issue #4 最新驗收（2026-10-14）
+
+- Pack 0.3.4：5 Regions、17 Places、37 Roads、24 Capabilities、26 Task Families、26 Generator Requirements；保留 7 個 reviewed Fixed Activities／16 個 observation points，新增 26 個 Family 單點錨點，合計 33 Activities／42 points。0.3.2 artifact 保留，digest `sha256:5feac5c62f0510ef2ecc9851e06d15e879e6e5095838771b35543b534364fed3` 未變。
+- 26 個 exact-Family deterministic generator registrations 各產生 10 個不同題目。260/260 候選均通過獨立 verifier、Pack validators 與 Runtime Pool admission。generator requirement 不單獨算作已實作供應。
+- Root 全測試 19 passed；Python compileall、改動檔 Ruff、`node --check web/app.js` 通過。SDK focused regression 181 passed、2 個舊 D1 knowledge-read 測試排除；同兩測試在乾淨 SDK PR #335 基線也失敗。另 7 個 Worker readiness 基線測試亦在乾淨基線失敗；此工作未改 Cloudflare/D1 readiness 實作。未手動啟動 GitHub Actions。
+- 同一 learner 的 Runtime/隔離 SQLite 驗收連續完成 10 個不同 Activity ID／題目；17/17 Places 有 canonical Surface/Evidence；26/26 Map Family exploration 有 Surface/Evidence。證據：`docs/evidence/math-u1-supply-matrix-final-0.3.4.json`、`docs/evidence/math-u1-10-activity-trace.json`。
+- Codex in-app Chromium 真實瀏覽器：看到全 5 Regions／17 Places／37 Roads，並沿 Road 從 U1-2→U1-3→U1-5；單選、多選、multi-classification、整數、結構化質因數分解、文字因數樹均由 Runtime 判定正確。答錯留在同題並可重試；初始題 2 的 LK Next Decision 載入不同題 3。證據：`docs/evidence/math-u1-browser-acceptance-2026-10-14.json`。
+- 驗收用 Python 本機 host 與暫存 SQLite；未操作 Docker 或原工作目錄／SQLite；沒有執行 Actions。
+- Root PR #3 保持 Draft，SDK PR #335 保持未合併；合併依賴順序仍是 SDK #335 先於 Root #3。未授權合併。
 
 ## 使用者決定與目標
 
@@ -20,7 +30,7 @@
 - 驗收：unittest 17 passed、Node check、Python compileall、Ruff、diff check 通過；canonical evaluator 三種 verdict 均已直接核對。真實瀏覽器完成單選錯誤後重試答對、多選連錯兩次後答對；兩輪流程合計 SQLite 10 observation / 10 attempt chain / 10 trusted evidence / 10 response-cache entries，ordinal/count/retryCount 逐次為 1/1/0、2/2/1，以及 1/1/0、2/2/1、3/3/2。Runtime restart 後 readiness 與十筆記錄仍可讀；先前 exact HTTP replay 實測回傳快取 response，未增加紀錄。
 - PR #2 已合併至 main。NAS 正式部署及備份／還原未驗收。
 
-## PR #3 當前狀態（2026-10-13）
+## Previous PR #3 snapshot（2026-10-13；已由以上 2026-10-14 驗收更新取代）
 
 - 根據 pinned SDK Phase 7.9.4 確認 Next Decision 已在 canonical Runtime：讀 exact-release Evidence → project Learner State → derive legal routes → choose navigation → 驗證實際 Activity Pool supply → 回 learner-safe Surface。原 SDK Pack 缺少可供應的 U1.1 classification-transfer Activity，因此在獨立私有 SDK 分支補 Pack 0.3.2、deterministic generator、獨立 verifier 和 artifact；未改推薦器或 evaluator。
 - SDK 分支 `vendor/learning-kernel-sdk:codex/u1-classification-transfer-supply` 本機 commit `ae263228d1d8a955a7ef8c40ef3a062f0ace8026`。GitHub push 回 GH007 private-email protection；本任務明確不處理 Git Email，因此沒有改 email、amend 或重寫歷史。SDK Draft PR 未建立。根工作目錄有未發布的 gitlink 指向此 commit；要 push root PR 前，先讓私有 SDK commit 可從遠端取得，否則公開 PR 將有無法 checkout 的 submodule。
@@ -32,13 +42,13 @@
 - Final isolated SQLite check before/after restart: 9 observation records, 9 trusted Evidence, 9 Attempt Chain rows (其中一條含 ordinal 1→2，其他 8 條單次), 7 issued Surface bindings；`PRAGMA integrity_check`=`ok`。Runtime 重啟後 readiness/schema rev4 與記錄數不變。
 - Surface browser boundary is unchanged: same-origin host allows only Surface reads and raw-observation writes. SDK tests check no validation fields in Surface and no-supply fail-closed; local host tests block privileged/unimplemented routes. Other subjects/modes, NAS and backup remain out of scope.
 
-### 發布阻礙與恢復步驟
+### 當時記錄的發布阻礙（已由 2026-10-14 更新取代）
 
 1. 目前不要推 root branch 或建立 PR #3；其 submodule SHA 尚未出現在 SDK remote。
 2. 下一輪先解決私有 SDK repo 的 commit push identity protection（本輪未處理 email）。只有 SDK commit 可正常遠端讀取後，才可推 root branch、建立 Draft PR #3。
 3. PR #3 要保留 Draft，提供使用者體驗；不得合併。不要建立 PR #4 或改 SDK main。
 
-## 已有環境和已驗證事實
+## 已有環境和歷史驗證事實（2026-10-12/13；最新 PR #3 狀態以上述 2026-10-14 驗收為準）
 
 - 使用者工作目錄先前是 `/mnt/c/Users/jamesyyliao/learning-kernel-bailian-selfhosted`。先 `pwd`、`git status -sb`、`git branch --show-current`，保留任何本機未提交修改；確認目錄存在後再操作。
 - Docker 29.8.2／Compose 5.5.1／Engine 29.8.2 在 WSL 可用。2026-10-12 實際執行 `docker compose up -d --build`，兩個服務 healthy；`/healthz`、`/api/ready` 均 HTTP 200，schema revision 4。
@@ -73,4 +83,4 @@
 
 ## 目前成功標準
 
-PR #1、PR #2 已合併。PR #3 的本機 Math U1→LK Next Decision→實際 Surface 流程與 SQLite 重啟驗收已通過；SDK Python 3.12 focused suite 140 passed、自架 unittest 17 passed。由於 GitHub 阻擋私有 SDK branch 推送，PR #3 尚未發布/建立 Draft，root branch 不可推到遠端直到 submodule commit 可達。其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
+PR #1、PR #2 已合併。Issue #4 的 U1 Map、26 Family Pool generation/admission、10 活動同 learner trace、17 Place Map trace、26 Family exploration 與真實瀏覽器回應格式均已在本機驗收。Root PR #3 保持 Draft，SDK PR #335 未合併，等待使用者體驗與明確 merge 授權。其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份仍未完成；另有兩個 D1 read-model 基線失敗和七個 Worker readiness 基線失敗未處理。
