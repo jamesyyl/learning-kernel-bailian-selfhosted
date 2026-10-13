@@ -11,6 +11,7 @@
 - Codex in-app Chromium 真實瀏覽器：看到全 5 Regions／17 Places／37 Roads，並沿 Road 從 U1-2→U1-3→U1-5；單選、多選、multi-classification、整數、結構化質因數分解、文字因數樹均由 Runtime 判定正確。答錯留在同題並可重試；初始題 2 的 LK Next Decision 載入不同題 3。證據：`docs/evidence/math-u1-browser-acceptance-2026-10-14.json`。
 - 驗收用 Python 本機 host 與暫存 SQLite；未操作 Docker 或原工作目錄／SQLite；沒有執行 Actions。
 - Root PR #3 保持 Draft，SDK PR #335 保持未合併；合併依賴順序仍是 SDK #335 先於 Root #3。未授權合併。
+- 已快轉推送：SDK branch `codex/u1-classification-transfer-supply` head `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root branch `codex/lk-next-decision-loop` implementation commit `8057a37d78b6cc3c485876ab8f23153a2531e740`。Root gitlink 指向該 SDK SHA。
 
 ## 使用者決定與目標
 
@@ -69,9 +70,9 @@
 - GitHub 原本只有 main 與 feature branch、PR #1 一筆 open PR、0 筆 deployment，沒有 Actions workflow；本次只更新這兩條分支。
 - 隱私殘留：舊 main SHA `8b1555205e7b` 與舊 feature head `f2acdcdcd25a` 仍可由 GitHub Commit API 讀取，回傳非 noreply metadata；未宣稱舊提交或外部快取已徹底清除。依本次條件不改 Ready、不合併。
 
-## 後續工作
+## 後續工作（2026-10-12 歷史快照；以本頁 Issue #4 最新驗收為準）
 
-1. 先依 PR #3 發布阻礙步驟處理私有 SDK commit 的可達性，再推 root branch、建立 Draft PR #3；保留 Draft 等使用者體驗。
+1. 等待使用者體驗並審閱 SDK PR #335、Root Draft PR #3；依賴順序為 SDK 先於 Root，未取得明確授權前不得合併。
 2. 其他科目、學習摘要、專項/自訂模式保持尚未開放；FnOS/NAS 部署、存取邊界與 SQLite 備份仍未驗收。
 
 ## 重要檔案與參考
