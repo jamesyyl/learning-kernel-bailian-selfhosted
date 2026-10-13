@@ -73,4 +73,4 @@
 
 ## 目前成功標準
 
-本機數學 U1 的 Docker、seed、Surface、單選與多選錯題重試、Attempt Chain/Evidence lineage、exact-request replay 與 SQLite 重啟保存均已通過。PR #2 等使用者體驗，尚未合併；其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
+PR #1、PR #2 已合併。PR #3 的本機 Math U1→LK Next Decision→實際 Surface 流程與 SQLite 重啟驗收已通過；SDK Python 3.12 focused suite 140 passed、自架 unittest 17 passed。由於 GitHub 阻擋私有 SDK branch 推送，PR #3 尚未發布/建立 Draft，root branch 不可推到遠端直到 submodule commit 可達。其他科目、成長/家長摘要、專項/自訂模式、FnOS/NAS 與備份未完成，已如實標示。
