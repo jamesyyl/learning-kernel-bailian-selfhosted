@@ -3,6 +3,10 @@ const LK_LOCAL_ENVIRONMENT = "home";
 const LK_MATH_U1_PACK = "org.learning-kernel.tw-math-g6-u1";
 const LK_LEARNING_MAP_URL = "/api/learning-map";
 const LK_SELECTED_PLACE_KEY = `bailian:${LK_MATH_U1_PACK}:current-place`;
+const LK_PENDING_SURFACES_KEY = `bailian:${LK_MATH_U1_PACK}:pending-surfaces`;
+const LK_PENDING_SURFACE_LIMIT = 12;
+const LK_SURFACE_REFILL_RETRY_COUNT = 8;
+const LK_SURFACE_REFILL_RETRY_DELAY_MS = 500;
 const LK_SURFACE_URL = `/api/learners/${encodeURIComponent(LK_LOCAL_LEARNER)}/environments/${encodeURIComponent(LK_LOCAL_ENVIRONMENT)}/packs/${encodeURIComponent(LK_MATH_U1_PACK)}/surface`;
 const LK_OBSERVATIONS_URL = `/api/learners/${encodeURIComponent(LK_LOCAL_LEARNER)}/environments/${encodeURIComponent(LK_LOCAL_ENVIRONMENT)}/packs/${encodeURIComponent(LK_MATH_U1_PACK)}/observations`;
 const LK_SURFACE_REQUEST = {
@@ -28,6 +32,103 @@ let lkFinished = false;
 let lkPendingNextSurface = null;
 let lkLearningMap = null;
 let lkPendingExplorationFamilyId = null;
+let lkCurrentSurfaceCacheKey = null;
+
+function lkSurfaceCacheKey(placeId, familyId = null) {
+  return JSON.stringify([placeId, familyId || null]);
+}
+
+function lkReadPendingSurfaceCache() {
+  try {
+    const value = JSON.parse(window.sessionStorage.getItem(LK_PENDING_SURFACES_KEY) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function lkCanResumeSurface(surface, familyId = null) {
+  const pack = surface?.lineage?.pack;
+  const points = surface?.lineage?.reportableObservationPoints;
+  return surface?.schemaVersion === "learning-kernel.surface-ir@1"
+    && surface?.surface?.payload?.activityId
+    && pack?.version === lkLearningMap?.pack?.version
+    && pack?.contentDigest === lkLearningMap?.pack?.contentDigest
+    && (!familyId || surface?.lineage?.taskFamilyRef?.localId === familyId)
+    && Array.isArray(points)
+    && points.length === 1;
+}
+
+function lkReadPendingSurface(key, placeId, familyId = null) {
+  const cache = lkReadPendingSurfaceCache();
+  const record = cache[key];
+  if (
+    !record
+    || record.placeId !== placeId
+    || (record.familyId || null) !== (familyId || null)
+    || !lkCanResumeSurface(record.surface, familyId)
+  ) {
+    if (record) lkClearPendingSurface(key);
+    return null;
+  }
+  return {
+    surface: record.surface,
+    attemptOrdinal: Number.isInteger(record.attemptOrdinal) && record.attemptOrdinal > 0
+      ? record.attemptOrdinal
+      : 1,
+  };
+}
+
+function lkStorePendingSurface(
+  key,
+  surface,
+  placeId,
+  familyId = null,
+  attemptOrdinal = 1,
+) {
+  if (!key || !lkCanResumeSurface(surface, familyId)) {
+    return;
+  }
+  try {
+    const cache = lkReadPendingSurfaceCache();
+    cache[key] = { surface, placeId, familyId, attemptOrdinal, savedAt: Date.now() };
+    const oldestFirst = Object.entries(cache).sort(
+      ([, first], [, second]) => (first?.savedAt || 0) - (second?.savedAt || 0),
+    );
+    while (oldestFirst.length > LK_PENDING_SURFACE_LIMIT) {
+      const [expiredKey] = oldestFirst.shift();
+      delete cache[expiredKey];
+    }
+    window.sessionStorage.setItem(LK_PENDING_SURFACES_KEY, JSON.stringify(cache));
+  } catch {
+    // The Runtime-issued Surface still works in this tab when session storage is unavailable.
+  }
+}
+
+function lkUpdatePendingSurfaceAttempt(key, attemptOrdinal) {
+  if (!key) return;
+  try {
+    const cache = lkReadPendingSurfaceCache();
+    const record = cache[key];
+    if (!record) return;
+    record.attemptOrdinal = attemptOrdinal;
+    record.savedAt = Date.now();
+    window.sessionStorage.setItem(LK_PENDING_SURFACES_KEY, JSON.stringify(cache));
+  } catch {
+    // Runtime remains authoritative if the browser cannot keep retry position locally.
+  }
+}
+
+function lkClearPendingSurface(key) {
+  if (!key) return;
+  try {
+    const cache = lkReadPendingSurfaceCache();
+    delete cache[key];
+    window.sessionStorage.setItem(LK_PENDING_SURFACES_KEY, JSON.stringify(cache));
+  } catch {
+    // Storage is only used to resume an already Runtime-issued Surface.
+  }
+}
 
 const lkBaseRenderHome = renderHome;
 
@@ -420,6 +521,25 @@ function lkErrorMessage(errorCode) {
   return messages[errorCode] || "Runtime 暫時無法完成這個步驟，請稍後重試。";
 }
 
+async function lkFetchSurfaceWithRefillRetry(currentContext) {
+  for (let attempt = 0; attempt < LK_SURFACE_REFILL_RETRY_COUNT; attempt += 1) {
+    const response = await fetch(LK_SURFACE_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ currentContext }),
+      cache: "no-store",
+    });
+    const body = await response.json();
+    if (response.ok) return body;
+    if (body.error !== "activity_supply_unavailable" || attempt + 1 === LK_SURFACE_REFILL_RETRY_COUNT) {
+      throw new Error(body.error || "runtime_unavailable");
+    }
+    lkSetActivityState("Learning Kernel 正在補充已驗證的練習…");
+    await new Promise((resolve) => setTimeout(resolve, LK_SURFACE_REFILL_RETRY_DELAY_MS));
+  }
+  throw new Error("activity_supply_unavailable");
+}
+
 function lkSetActivityState(message, isError = false, visualState = null) {
   const state = document.querySelector("#submitState");
   if (!state) return;
@@ -442,6 +562,7 @@ function lkClearActivity() {
   lkNextStepIndex = null;
   lkFinished = false;
   lkPendingNextSurface = null;
+  lkCurrentSurfaceCacheKey = null;
   document.querySelector("#backFromActivity").disabled = false;
   document.querySelector("#activityCounter").hidden = true;
   document.querySelector("#activityProgress").hidden = true;
@@ -472,6 +593,9 @@ async function lkStartU1() {
     lkToast("這個學習地點不在目前的 Pack 地圖中。");
     return;
   }
+  const requestedFamilyId = lkPendingExplorationFamilyId;
+  lkPendingExplorationFamilyId = null;
+  const cacheKey = lkSurfaceCacheKey(currentPlace.id, requestedFamilyId);
   lkClearActivity();
   document.querySelector("#activityModeLabel").textContent = "數學 U1・本機練習";
   document.querySelector("#activityTitle").textContent = `數學 U1｜${currentPlace.title}`;
@@ -485,26 +609,32 @@ async function lkStartU1() {
   goPage("activity");
 
   try {
+    const pending = lkReadPendingSurface(cacheKey, currentPlace.id, requestedFamilyId);
+    if (pending) {
+      lkCurrentSurfaceCacheKey = cacheKey;
+      lkLoadSurface(
+        pending.surface,
+        pending.surface.surface?.payload?.presentation?.title || `數學 U1｜${currentPlace.title}`,
+      );
+      lkAttemptOrdinal = pending.attemptOrdinal;
+      return;
+    }
+
     const startRequest = {
       currentContext: { ...LK_SURFACE_REQUEST.currentContext },
     };
-    const requestedFamilyId = lkPendingExplorationFamilyId;
-    lkPendingExplorationFamilyId = null;
     if (requestedFamilyId) {
       startRequest.currentContext.learnerExplorationTaskFamilyIds = [requestedFamilyId];
     }
-    const response = await fetch(LK_SURFACE_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(startRequest),
-      cache: "no-store",
-    });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error || "runtime_unavailable");
+    const body = await lkFetchSurfaceWithRefillRetry(startRequest.currentContext);
     if (body.schemaVersion !== "learning-kernel.surface-ir@1") {
       throw new Error("unexpected_surface_schema");
     }
     lkLoadSurface(body, body.surface?.payload?.presentation?.title || `數學 U1｜${currentPlace.title}`);
+    if (lkPoints.length === 1) {
+      lkCurrentSurfaceCacheKey = cacheKey;
+      lkStorePendingSurface(cacheKey, body, currentPlace.id, requestedFamilyId);
+    }
   } catch (error) {
     const code = error instanceof Error ? error.message : "runtime_unavailable";
     document.querySelector("#activityQuestion").textContent = "目前無法載入數學 U1 活動";
@@ -585,29 +715,10 @@ async function lkRequestNextDecision() {
   lkShowRecommendationMessage("正在找下一個適合的練習…", "Learning Kernel 正在查看這次練習的紀錄。", false);
 
   try {
-    const response = await fetch(LK_SURFACE_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        currentContext: {
-          currentPlaceLocalId: LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId,
-          todayPractice: true,
-        },
-      }),
-      cache: "no-store",
+    const body = await lkFetchSurfaceWithRefillRetry({
+      currentPlaceLocalId: LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId,
+      todayPractice: true,
     });
-    const body = await response.json();
-    if (!response.ok) {
-      if (body.error === "activity_supply_unavailable" || body.error === "no_legal_route_candidates") {
-        lkPendingNextSurface = null;
-        lkShowRecommendationMessage(
-          "這次練習完成了",
-          "目前沒有可接續的數學 U1 活動。你的學習紀錄已保存。",
-        );
-        return;
-      }
-      throw new Error(body.error || "runtime_unavailable");
-    }
     if (
       body.schemaVersion !== "learning-kernel.surface-ir@1" ||
       !body.execution?.observation?.routeKind ||
@@ -617,10 +728,23 @@ async function lkRequestNextDecision() {
       throw new Error("unexpected_surface_schema");
     }
     lkPendingNextSurface = body;
+    const placeId = LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId;
+    const cacheKey = lkSurfaceCacheKey(placeId);
+    if (lkCanResumeSurface(body)) {
+      lkStorePendingSurface(cacheKey, body, placeId);
+    }
     lkShowRecommendationMessage("LK 為你挑了下一個練習", lkRecommendationPrompt(body), true);
     document.querySelector("#lkNextDecisionReason").textContent = lkRouteReason(body.execution.observation.routeKind);
-  } catch {
+  } catch (error) {
     lkPendingNextSurface = null;
+    const code = error instanceof Error ? error.message : "runtime_unavailable";
+    if (code === "activity_supply_unavailable" || code === "no_legal_route_candidates") {
+      lkShowRecommendationMessage(
+        "這次練習完成了",
+        "目前沒有可接續的數學 U1 活動。你的學習紀錄已保存。",
+      );
+      return;
+    }
     lkShowRecommendationMessage(
       "這次練習完成了",
       "現在暫時無法取得下一步建議。你的學習紀錄已保存，稍後可以再試。",
@@ -632,9 +756,19 @@ function lkStartRecommendedSurface() {
   if (!lkPendingNextSurface) return;
   const surface = lkPendingNextSurface;
   lkPendingNextSurface = null;
+  const placeId = LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId;
+  const cacheKey = lkSurfaceCacheKey(placeId);
   try {
+    lkCurrentSurfaceCacheKey = cacheKey;
     lkLoadSurface(surface, surface.surface?.payload?.presentation?.title || "數學 U1｜LK 推薦練習");
+    if (lkPoints.length === 1) {
+      lkStorePendingSurface(cacheKey, surface, placeId);
+    } else {
+      lkCurrentSurfaceCacheKey = null;
+    }
   } catch {
+    lkCurrentSurfaceCacheKey = null;
+    lkClearPendingSurface(cacheKey);
     lkShowRecommendationMessage(
       "目前無法開始這個活動",
       "你的學習紀錄已保存。請返回學習旅程，再試一次。",
@@ -941,6 +1075,7 @@ async function lkSubmitAnswer() {
     const nextButton = document.querySelector("#nextActivity");
     if (verdict === "incorrect") {
       lkAttemptOrdinal = capture.attempt.attemptOrdinal + 1;
+      lkUpdatePendingSurfaceAttempt(lkCurrentSurfaceCacheKey, lkAttemptOrdinal);
       lkResponseValue = lkResponseBlock.capability === "response.multi-choice@1" ? [] : null;
       const freeResponse = document.querySelector("[data-runtime-free-response]");
       if (freeResponse) freeResponse.value = "";
@@ -962,6 +1097,10 @@ async function lkSubmitAnswer() {
     lkAnswersLocked = true;
     lkSetAnswerChoicesDisabled(true);
     lkFinished = finished;
+    if (finished && lkCurrentSurfaceCacheKey) {
+      lkClearPendingSurface(lkCurrentSurfaceCacheKey);
+      lkCurrentSurfaceCacheKey = null;
+    }
     submitButton.hidden = true;
     nextButton.hidden = false;
     if (nextStepIndex !== null) {

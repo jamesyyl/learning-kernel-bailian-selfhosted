@@ -16,6 +16,7 @@ from learning_kernel.activity_generation.provenance import (
     ActivityGeneratorProvenance,
     ActivityProvenanceRecord,
 )
+from learning_kernel.activity_generation.registry import GeneratorRegistry
 from learning_kernel.activity_generation.request import ActivityIdentityRef
 from learning_kernel.activity_generation.supply_contracts import ActivityPoolEntry
 from learning_kernel.activity_generation.validation import ActivityValidationResult
@@ -23,6 +24,9 @@ from learning_kernel.domain.values import thaw_json
 from learning_kernel.knowledge_packs.artifact import read_pack_artifact
 from learning_kernel.knowledge_packs.math_u1_vnext.deterministic_generators import (
     build_u1_deterministic_generator_registry,
+)
+from learning_kernel.knowledge_packs.math_u1_vnext.family_generators import (
+    MathU1FamilyGenerator,
 )
 from learning_kernel.knowledge_packs.math_u1_vnext.generator_requirements import (
     U1_GENERATOR_REQUIREMENTS,
@@ -33,6 +37,9 @@ from learning_kernel.knowledge_packs.math_u1_vnext.verification import (
     MathU1IndependentVerifier,
 )
 from learning_kernel.knowledge_packs.vnext_activity import ActivityRef
+from learning_kernel.knowledge_packs.vnext_generator_requirements import (
+    GeneratorRequirement,
+)
 from learning_kernel.runtime.pack_registry import INSTALL_ENVIRONMENT_SCHEMA
 
 from api.migrations import apply_runtime_migrations
@@ -47,6 +54,7 @@ ARTIFACT_DIR = (
 )
 ADMISSION_TOKEN = "in-process-local-bootstrap-only"
 VARIANTS_PER_FAMILY = 10
+GENERATOR_IMPLEMENTATION_VERSION = "2.0.0"
 
 
 def _install_environment() -> dict[str, object]:
@@ -90,105 +98,80 @@ def _pack_activity_for_family(family_id: str) -> tuple[object, object]:
     return matches[0]
 
 
+def _pool_payload_for_variant(
+    *,
+    content_digest: str,
+    requirement: GeneratorRequirement,
+    variant_index: int,
+    registry: GeneratorRegistry,
+    verifier: MathU1IndependentVerifier,
+) -> dict[str, object]:
+    family_id = requirement.task_family.local_id
+    pack_activity, observation_point = _pack_activity_for_family(family_id)
+    registered = registry.resolve(requirement)
+    if not isinstance(registered, MathU1FamilyGenerator):
+        raise RuntimeError(
+            f"No deterministic Math U1 generator registered for {family_id}."
+        )
+    generator = registered.for_variant(variant_index)
+    request = generator.request()
+    design = generator.design(request=request)
+    artifact = generator.generate_from_design(design=design)
+    verification = verifier.verify(request=request, design=design, artifact=artifact)
+    if not verification.passed:
+        raise RuntimeError(
+            f"Math U1 independent verification failed for {family_id} "
+            f"variant {variant_index}: {verification.failure_codes}"
+        )
+    validator_results = tuple(
+        ActivityValidationResult(
+            validator=ActivityIdentityRef(PACK_ID, item.local_id),
+            artifact=artifact,
+            passed=True,
+        )
+        for item in requirement.validators
+    )
+    provenance = ActivityProvenanceRecord(
+        pack_release=U1_PACK.identity,
+        request=request,
+        design=design,
+        artifact=artifact,
+        generation_method="deterministic",
+        generator=ActivityGeneratorProvenance(
+            generator=requirement,
+            implementation_id="learning-kernel.math-u1-family-generator",
+            implementation_version=GENERATOR_IMPLEMENTATION_VERSION,
+        ),
+        supply_route="direct_generation",
+        independent_verification=verification,
+        validator_results=validator_results,
+    )
+    entry = ActivityPoolEntry(artifact=artifact, design=design, provenance=provenance)
+    return serialize_activity_pool_entry_artifact(
+        entry_id=f"pool-entry/{family_id}/variant-{variant_index:02d}",
+        entry=entry,
+        pack_activity_ref=ActivityRef(PACK_ID, pack_activity.local_id),
+        observation_point_local_id=observation_point.local_id,
+        generator_requirement_id=requirement.local_id,
+        content_digest=content_digest,
+    )
+
+
 def _pool_payloads(content_digest: str) -> tuple[dict[str, object], ...]:
-    """Generate, independently verify, and encode ten entries for every Pack family."""
+    """Generate and verify the initial ten Pool variants for every Pack family."""
     registry = build_u1_deterministic_generator_registry()
     verifier = MathU1IndependentVerifier()
-    payloads: list[dict[str, object]] = []
-
-    for requirement in U1_GENERATOR_REQUIREMENTS.requirements:
-        family_id = requirement.task_family.local_id
-        pack_activity, observation_point = _pack_activity_for_family(family_id)
-        registered = registry.resolve(requirement)
-        for variant_index in range(VARIANTS_PER_FAMILY):
-            generator = registered.for_variant(variant_index)
-            request = generator.request()
-            design = generator.design(request=request)
-            artifact = generator.generate_from_design(design=design)
-            verification = verifier.verify(
-                request=request,
-                design=design,
-                artifact=artifact,
-            )
-            if not verification.passed:
-                raise RuntimeError(
-                    f"Math U1 independent verification failed for {family_id} "
-                    f"variant {variant_index}: {verification.failure_codes}"
-                )
-            validator_results = tuple(
-                ActivityValidationResult(
-                    validator=ActivityIdentityRef(PACK_ID, item.local_id),
-                    artifact=artifact,
-                    passed=True,
-                )
-                for item in requirement.validators
-            )
-            provenance = ActivityProvenanceRecord(
-                pack_release=U1_PACK.identity,
-                request=request,
-                design=design,
-                artifact=artifact,
-                generation_method="deterministic",
-                generator=ActivityGeneratorProvenance(
-                    generator=requirement,
-                    implementation_id="learning-kernel.math-u1-family-generator",
-                    implementation_version=PACK_VERSION,
-                ),
-                supply_route="direct_generation",
-                independent_verification=verification,
-                validator_results=validator_results,
-            )
-            entry = ActivityPoolEntry(
-                artifact=artifact,
-                design=design,
-                provenance=provenance,
-            )
-            payloads.append(
-                serialize_activity_pool_entry_artifact(
-                    entry_id=f"pool-entry/{family_id}/variant-{variant_index:02d}",
-                    entry=entry,
-                    pack_activity_ref=ActivityRef(PACK_ID, pack_activity.local_id),
-                    observation_point_local_id=observation_point.local_id,
-                    generator_requirement_id=requirement.local_id,
-                    content_digest=content_digest,
-                )
-            )
-
-    return tuple(payloads)
-
-
-def _has_existing_seed_surface_binding(
-    database: SqliteD1Database,
-    learner_id: str,
-    environment_id: str,
-    content_digest: str,
-) -> bool:
-    row = database.connection.execute(
-        """
-        SELECT canonical_json
-        FROM vnext_issued_activity_bindings
-        WHERE learner_id = ?
-          AND environment_id = ?
-          AND pack_id = ?
-          AND pack_version = ?
-          AND content_digest = ?
-        LIMIT 1
-        """,
-        (learner_id, environment_id, PACK_ID, PACK_VERSION, content_digest),
-    ).fetchone()
-    if row is None:
-        return False
-
-    binding = json.loads(row[0])
-    pack = binding.get("pack", {})
-    if (
-        pack.get("packId") != PACK_ID
-        or pack.get("packVersion") != PACK_VERSION
-        or pack.get("contentDigest") != content_digest
-        or not binding.get("surfaceDigest")
-    ):
-        raise RuntimeError("Existing Surface binding has unexpected Pack lineage")
-    return True
+    return tuple(
+        _pool_payload_for_variant(
+            content_digest=content_digest,
+            requirement=requirement,
+            variant_index=variant_index,
+            registry=registry,
+            verifier=verifier,
+        )
+        for requirement in U1_GENERATOR_REQUIREMENTS.requirements
+        for variant_index in range(VARIANTS_PER_FAMILY)
+    )
 
 
 async def seed(database_path: Path, learner_id: str, environment_id: str) -> None:
@@ -281,42 +264,10 @@ async def seed(database_path: Path, learner_id: str, environment_id: str) -> Non
         if admission_result.get("entryCount") != len(pool_payloads):
             raise RuntimeError("Runtime admitted an unexpected number of Pool entries.")
 
-        entry = U1_PACK.execution_contract.entry_points[0]
-        surface_path = (
-            f"/api/learners/{quote(learner_id, safe='')}/environments/"
-            f"{quote(environment_id, safe='')}/packs/{quote(PACK_ID, safe='')}/surface"
-        )
-        if _has_existing_seed_surface_binding(
-            database, learner_id, environment_id, artifact.content_digest
-        ):
-            surface_note = "existing canonical Surface binding preserved"
-        else:
-            surface = await request(
-                "POST",
-                surface_path,
-                {
-                    "currentContext": {
-                        "currentPlaceLocalId": entry.place_local_id,
-                        "todayPractice": True,
-                    },
-                },
-            )
-            if surface.status != 200:
-                raise RuntimeError(
-                    f"Surface unavailable ({surface.status}): {surface.body.decode()}"
-                )
-            payload = json.loads(surface.body)
-            if (
-                payload.get("schemaVersion") != "learning-kernel.surface-ir@1"
-                or payload.get("lineage", {}).get("pack", {}).get("version")
-                != PACK_VERSION
-            ):
-                raise RuntimeError("Surface has unexpected Pack lineage")
-            surface_note = "canonical Surface ready"
         print(
             f"Math U1 {PACK_VERSION}: {len(pool_payloads)} verified Pool entries "
             f"({VARIANTS_PER_FAMILY} for each of {len(U1_GENERATOR_REQUIREMENTS.requirements)} families); "
-            f"{surface_note}"
+            "Pool admitted; no learner Surface issued during bootstrap"
         )
     finally:
         database.connection.close()
