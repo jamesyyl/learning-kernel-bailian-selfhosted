@@ -27,11 +27,11 @@
 | 項目 | 結果 | 實際證據 |
 |---|---|---|
 | 首頁、Journey、孩子活動文案 | PASS | 實際 Chromium DOM 檢視；活動文字不含 `integer`、`response.text@1`、Runtime、HTTP、Nginx、D1、SQLite、raw observation、Task Family 等工程字詞。 |
-| 整數輸入及可信判斷 | PASS | U1-4「求 45 和 60 的最小公倍數」；`0` 收到 Runtime HTTP 202／incorrect／可重試，`180` 收到 202／correct。瀏覽器欄位屬性實測 `type=text`、`inputmode=numeric`。 |
-| 質因數分解式 | PASS | U1-2 題目要求分解 24；實際輸入 `2x2*2×3`，Runtime HTTP 202／correct。瀏覽器實測為單行 `INPUT`、`inputmode=text`。游標插入、選取範圍取代、清除／重寫與焦點返回均通過。SDK 現有可信評估器的 `×`、`x`、`*` 及混合分隔測試通過，未改 SDK。 |
-| 引導式因數樹 | PASS | U1-2 題目完整分解 72；使用非 canonical 但合法的 `72=6×12；6=2×3；12=3×4；4=2×2`，Runtime HTTP 202／correct，receipt 含 evaluated=true、Evidence ID 與 Attempt Chain ID。原始回答經 Chromium request body 原封送出。範例 `12=3×4；4=2×2` 與題目 72 不同。 |
+| 整數輸入及可信判斷 | PASS | U1-4 direct-LCM Surface；一個故意錯答由 Runtime HTTP 202 判為 incorrect 並允許重試，後續正確作答收到 202／correct。瀏覽器欄位屬性實測 `type=text`、`inputmode=numeric`。不在報告中重複列出題目數值或答案。 |
+| 質因數分解式 | PASS | U1-2 Factorization Surface；單行輸入包含 `×`、`x`、`*` 混用，Runtime HTTP 202／correct。瀏覽器實測為單行 `INPUT`、`inputmode=text`。游標插入、選取範圍取代、清除／重寫與焦點返回均通過。SDK 現有可信評估器的 `×`、`x`、`*` 及混合分隔測試通過，未改 SDK；原始答案字串未在報告中公開。 |
+| 引導式因數樹 | PASS | U1-2 Factor Tree Surface；非 canonical、但結構合法的替代分解由 Runtime HTTP 202 判為 correct，receipt 含 evaluated=true、Evidence ID 與 Attempt Chain ID。CDP 唯讀檢查確認完整多步字串原封送出；不在報告中公開題目或答案數值。 |
 | 因數樹手機畫面 | PASS | Chromium 390×844；引導、格式例、四列 textarea、工具鍵與送出按鈕均在一個視窗內；實測 document 高度 844px、送出按鈕底部 732px，無需捲動。 |
-| 多選 | PASS | U1-1「檢查 35」選 2、5，Runtime HTTP 202／incorrect 並可重試；再選 5，Runtime HTTP 202／correct。 |
+| 多選 | PASS | U1-1 divisibility Surface；同時選取兩個選項得到 Runtime HTTP 202／incorrect 並可重試，改選正確集合後收到 202／correct。報告不列出選項答案。 |
 | 單選 | NOT RUN | 同歷史 learner 的五條單選候選 Family 均沒有未發行 Pool variant；逐項查詢未使用候選為空。未建立新 learner、未生成或補入測試題來冒充驗收。單選 renderer 未更動，但缺少真實單選 Surface 的 Chromium E2E 證據。 |
 | U1-1 供應耗盡 | PASS | `u1-1/family/direct-prime-composite-classification` 的 Surface 回 HTTP 503，`activity_supply_unavailable`／`requested_family_exhausted`；畫面顯示「這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。」且沒有送出按鈕。 |
 | 真實載入故障 | PASS | 暫停隔離 Runtime 後，瀏覽器實收 HTTP 502；孩子畫面顯示「題目載入出了點問題，請再試一次。」且沒有送出按鈕。DevTools 日誌保留 `errorCode=runtime_http_502; httpStatus=502`。重啟後 readiness HTTP 200，重新進入活動收到 Surface HTTP 200。 |
