@@ -1,0 +1,142 @@
+{
+  "schema": "bailian.selfhosted.math-u1-live-supply-recovery@1",
+  "date": "2026-10-14",
+  "scope": "Docker + SQLite + Math U1 only",
+  "pullRequests": {
+    "sdk335": {
+      "url": "https://github.com/jamesyyl/learning-kernel-sdk/pull/335",
+      "state": "OPEN",
+      "head": "bdc2c3c20a0ed62554e95223aef2b4f1566193df"
+    },
+    "root3": {
+      "url": "https://github.com/jamesyyl/learning-kernel-bailian-selfhosted/pull/3",
+      "state": "OPEN",
+      "isDraft": true,
+      "head": "ab2d7cd05190a787378525118483336260ef5809"
+    }
+  },
+  "original18084BeforeFix": {
+    "composeProject": "lk-u1-acceptance-20261014",
+    "url": "http://127.0.0.1:18084/",
+    "readOnlySurfaceResult": {
+      "placeLocalId": "u1-1/factor-structure",
+      "status": 503,
+      "error": "activity_supply_unavailable",
+      "taskFamilyId": "u1-1/family/direct-prime-composite-classification"
+    },
+    "sqliteBefore": {
+      "integrity": "ok",
+      "poolEntries": 260,
+      "directFamilyEntries": 10,
+      "directFamilyUnissuedForLearner": 0,
+      "issuedBindings": 40,
+      "attemptChains": 34,
+      "evidence": 34,
+      "responseCache": 34,
+      "otherU1_1FamilyUnissued": {
+        "classificationTransfer": 2,
+        "divisibilityCompositeScreening": 8
+      }
+    },
+    "backup": {
+      "filename": "learning-kernel.pre-failure-20261014.sqlite3",
+      "sha256": "650ce819c92e3815f85c7143e39bb0e0dec63052044a68f68ff9ff148aca565c",
+      "integrity": "ok",
+      "rowCountsMatchedOriginal": true
+    }
+  },
+  "rootCause": [
+    "Only the exact U1-1 Family selected by canonical Runtime had exhausted candidates; other U1-1 Families still had supply.",
+    "The direct-classification generator cycled 2 through 11 while the verified Pack capability covered 2 through 19. Runtime correctly failed closed.",
+    "Candidate exclusion used Evidence but not already-issued, unanswered Activity bindings, allowing pending Surface replay on route return."
+  ],
+  "fix": {
+    "sdk": {
+      "head": "bdc2c3c20a0ed62554e95223aef2b4f1566193df",
+      "generator": "18 unique direct-classification activities for numbers 2 through 19",
+      "antiReplay": "Exclude issued Activity IDs scoped to learner, environment, Pack version, and content digest."
+    },
+    "root": {
+      "head": "ab2d7cd05190a787378525118483336260ef5809",
+      "refiller": "Independent Compose process incrementally generates, verifies, and admits missing candidates.",
+      "resume": "sessionStorage holds only the Runtime-issued pending Surface and retry ordinal; no answer or verdict."
+    },
+    "noFullReseed": "No page-load, request-time, or Runtime-start seed was run."
+  },
+  "cloneAcceptance": {
+    "composeProject": "lk-u1-failure-repro-20261014",
+    "url": "http://127.0.0.1:18085/",
+    "refill": {
+      "status": "PASS",
+      "entriesAdded": 8,
+      "taskFamily": "u1-1/family/direct-prime-composite-classification",
+      "generatorVersion": "2.0.0",
+      "variantsScanned": 192
+    },
+    "poolAfterRefill": {
+      "total": 268,
+      "directFamily": 18,
+      "families": 26
+    },
+    "sameLearnerOverTen": "PASS: Root Runtime/SQLite test completed ten unique candidates, exhausted the exact Family, refilled, and continued.",
+    "multipleLearners": "PASS: shared Pool candidate use with Evidence scoped to learner B.",
+    "browser": [
+      "Reproduced the empty-supply error before refill; afterwards U1-1 loaded question 12.",
+      "Wrong answer showed Runtime retry; correct answer completed through Runtime.",
+      "Journey return and reload restored the same pending Surface without a duplicate binding.",
+      "After Runtime restart, SQLite integrity remained ok and Journey return restored pending question 15."
+    ],
+    "sqliteAfterRestart": {
+      "integrity": "ok",
+      "pool": 268,
+      "bindings": 46,
+      "evidence": 38,
+      "attemptChains": 38,
+      "responseCache": 38
+    }
+  },
+  "live18084AfterFix": {
+    "containers": {
+      "runtime": "healthy",
+      "poolRefiller": "running",
+      "web": "healthy"
+    },
+    "readiness": "ready; SQLite schema revision 4",
+    "pool": {
+      "total": 268,
+      "directFamily": 18
+    },
+    "sqlite": {
+      "integrity": "ok",
+      "bindings": 41,
+      "attemptChains": 35,
+      "evidence": 35,
+      "responseCache": 35
+    },
+    "browser": "A separate Chromium tab opened U1-1 through Journey, loaded question 12, and showed Runtime retry feedback after a wrong answer. The user's existing U1-5 tab was left untouched.",
+    "untouchedProjects": [
+      "8080",
+      "8081",
+      "8084"
+    ]
+  },
+  "tests": {
+    "rootFocused": "14 passed, 3 subtests passed",
+    "sdkFocused": "89 passed",
+    "ruffLint": "PASS",
+    "ruffFormatChangedPythonFiles": "PASS",
+    "compileall": "PASS",
+    "nodeCheck": "PASS",
+    "gitDiffCheck": "PASS",
+    "wholeDirectoryRuffFormat": "NOT PASS: existing format difference in api/sqlite_d1.py, unchanged in this follow-up."
+  },
+  "outOfScope": {
+    "cloudflareWorkersPagesAccessD1": "NOT RUN",
+    "fullPackCoverageRerun": "NOT RUN in this narrow regression follow-up; see existing Pack 0.3.4 evidence."
+  },
+  "status": {
+    "u1_1ExhaustionRecovery": "PASS",
+    "fullSupply": "NOT REASSERTED by this follow-up",
+    "merged": false
+  }
+}

@@ -2,6 +2,17 @@
 
 更新：2026-10-14。PR #1 merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`、PR #2 均已合併。Issue #4 的 Math U1 全 Map、Pool/Generation、Surface 作答能力已在隔離副本實作並完成 Docker/SQLite Runtime 與真實瀏覽器驗收。Root PR #3 保持 Draft、SDK PR #335 保持未合併；使用者原始 checkout/WIP、既有 SQLite 與 8080/8081/8084 Compose 專案均未碰觸。驗收使用新建的暫存 Compose project、loopback 18084 與獨立 SQLite。
 
+## U1-1 live supply failure follow-up (2026-10-14)
+
+- Exact 18084 failure was HTTP 503 activity_supply_unavailable for U1-1 direct-prime-composite-classification. Read-only SQLite evidence: Pool 260, exact Family 10 entries all issued by the learner, while other U1-1 Families still had unissued candidates.
+- Root cause: generator covered 2–11 despite Pack verifier domain 2–19; Runtime correctly failed closed. SDK now produces 18 direct-classification candidates and excludes previously issued Activity IDs scoped to learner/environment/exact release, including pending unanswered Surface bindings.
+- Independent Docker refiller uses canonical generation, independent verification, and Runtime admission. It added eight candidates, taking Pool 260→268 without reseeding on page load or Runtime restart. Pending Surface is resumed from sessionStorage without storing response or verdict.
+- Clone browser reproduced error then verified entry, wrong-answer retry, Journey return/reload, Runtime restart, and SQLite persistence. After restart integrity was ok and pending prompt 15 resumed.
+- Actual 18084: Runtime healthy, refiller running, Web healthy, readiness schema rev4. Pool 268/direct Family 18. Chromium entered U1-1 from Journey, loaded prompt 12, and showed Runtime retry after a wrong answer. Original user U1-5 tab was left untouched.
+- Regression results: Root 14 passed + 3 subtests; SDK 89 passed. Ruff lint, changed-file format, compileall, Node syntax, and diff check passed. Whole-directory Ruff format check reports existing drift in unchanged api/sqlite_d1.py. Cloudflare/Workers/Pages/Access/WAF/D1 tests were not run.
+- SDK head bdc2c3c20a0ed62554e95223aef2b4f1566193df (PR #335 Open); Root head ab2d7cd05190a787378525118483336260ef5809 (PR #3 Open/Draft). No merge. Full Pack acceptance is not reasserted by this narrow follow-up.
+- Detailed evidence: docs/evidence/math-u1-runtime-supply-recovery-2026-10-14.json. Original SQLite backup SHA-256: 650ce819c92e3815f85c7143e39bb0e0dec63052044a68f68ff9ff148aca565c.
+
 ## Issue #4 最新驗收（2026-10-14）
 
 - Pack 0.3.4：5 Regions、17 Places、37 Roads、24 Capabilities、26 Task Families、26 Generator Requirements；保留 7 個 reviewed Fixed Activities／16 個 observation points，新增 26 個 Family 單點錨點，合計 33 Activities／42 points。0.3.2 artifact 保留，digest `sha256:5feac5c62f0510ef2ecc9851e06d15e879e6e5095838771b35543b534364fed3` 未變。
