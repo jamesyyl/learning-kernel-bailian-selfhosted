@@ -19,7 +19,8 @@
 - Runtime／refiller 重啟續學後副本 SHA-256：`6825aced75adb8291748b1e52b277d9200bfa7f5863dfc4d9758c431f90da6cd`；Pool 268、bindings 88、Evidence 67、Attempt Chains 67、response cache 67、`integrity_check=ok`。
 - Nginx `nginx -t` 成功。測試專案只使用獨立 image tags 與 18088／18089／18090；原 18084 learner Evidence 尚未被本輪測試請求寫入。
 - 更新 18084 前再做一致性備份；SHA-256 仍為 `ee31786da9d9a096057f228801ea3ff4b3331c88d444523f3b9e92ea21d6ae31`，Evidence canonical rows digest `d91a268b45e6c47ed453a915623460f19d81dcd5495129203c3ddf5958048a45`。更新前 Pool 268、bindings 71、Evidence 46、Attempt Chains 46、response cache 46。
-- 18084 現已使用 Runtime source SHA `851698a7a79d7a6942692e97f8a54f025d09a9c2`，Runtime/Web/Refiller healthy，schema rev4；`/api/ready` 回 200，Web image 內 `nginx -t` 成功。以該真實 learner 明確要求已耗盡的 direct-classification Family，回 503 `requested_family_exhausted`，沒有建立 binding。再由 Chromium 的 Learning Journey 普通路線進入 U1-5 問題結構，Live Runtime 回 200 Activity `generated/u1-5/family/problem-structure-recognition/variant-0`。Activity「返回」回 Journey 並保留 Math／原選取 Place；重新進入時 0 個新 `/surface` 請求，恢復同一待答 Surface。此安全驗證新增 1 個待答 binding（71→72），沒有提交作答；Pool 仍 268，Evidence／Attempt Chains／response cache 仍 46，Evidence digest 與更新前備份相同。18084 瀏覽器目前停在這題供使用者體驗；8080／8081／8084 containers 保持原狀。
+- 18084 現已使用 Runtime source SHA `851698a7a79d7a6942692e97f8a54f025d09a9c2`，Runtime/Web/Refiller healthy，schema rev4；`/api/ready` 回 200，Web image 內 `nginx -t` 成功。以該真實 learner 明確要求已耗盡的 direct-classification Family，回 503 `requested_family_exhausted`，沒有建立 binding。再由 Chromium 的 Learning Journey 普通路線進入 U1-5 問題結構，Live Runtime 回 200 Activity `generated/u1-5/family/problem-structure-recognition/variant-0`。Activity「返回」回 Journey 並保留 Math／原選取 Place；重新進入時 0 個新 `/surface` 請求，恢復同一待答 Surface。最終 live counts：Pool 268、bindings 72、Evidence／Attempt Chains／response cache 各 46；Evidence digest 與更新前備份相同。這次安全驗證只新增 1 個待答 binding、沒有提交作答；18084 瀏覽器目前停在該題供使用者體驗。8080／8081／8084 containers 保持原狀。
+- 最後兩個一致性 clone snapshot：18089 Journey 副本 SHA-256 `e18be666bb95bb62082c3be2a9f5f9d5cc898dd95a15cccbbE955375a34f9317`（Pool 268、bindings 89、Evidence/attempt/cache 67）；18090 Family／multi-learner 副本 SHA-256 `471704672a20a1b89652dee2e69cbf5f0c3ac4c68041cacbfb9372e16fd213ee`（Pool 268、bindings 113、Evidence/attempt/cache 69／69／70）；兩者 integrity 均為 ok。
 
 ## 同 learner、同 SQLite 的 Chromium 17 Place 回合
 
@@ -74,7 +75,7 @@
 ## Git 與交付
 
 - SDK PR #335 保持 Open；最終 Runtime Trusted Evaluation／route SHA：`851698a7a79d7a6942692e97f8a54f025d09a9c2`。
-- Root PR #3 保持 Draft、未合併；SDK PR #335 保持 Open、未合併。
+- Root PR #3 head `6731e3397cfbdf8d63df1aa2681cecec736bdeef` 保持 Draft、未合併；SDK PR #335 head `851698a7a79d7a6942692e97f8a54f025d09a9c2` 保持 Open、未合併。
 - Checkpoints：Root diagnosis `a9ec086a4754295ea9c242d865a76734fe3e0d7b`、Root Runtime `76afc58f4b95bda21af93a007ab20a296c49f37c`；SDK initial safe checkpoint `bdc2c3c20a0ed62554e95223aef2b4f1566193df`、SDK pre-API local route checkpoint `c39691052493dcb705ee0a61c0d94851dc90ccae`、SDK evaluator local checkpoint `a021d8497d32e4b43807a55471cbc53388b74792`。
 
 本輪對 18084 只做 Runtime/Web/Refiller image 更新及 no-supply safe check；原始 learner 的 Evidence 與 SQLite 內容未改。`18089` 是供使用者查看 17 Place 後 learner history 的副本；`18090` 是 26 Family 與多 learner 的獨立副本。
