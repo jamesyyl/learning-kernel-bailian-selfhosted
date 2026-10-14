@@ -356,9 +356,20 @@ async def _run_watch(
 
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--once", action="store_true", help="run one low-water scan and exit"
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--once",
+        dest="once",
+        action="store_true",
+        help="run one low-water scan and exit",
     )
+    mode.add_argument(
+        "--watch",
+        dest="once",
+        action="store_false",
+        help="run as an independent background refiller",
+    )
+    parser.set_defaults(once=False)
     parser.add_argument(
         "--interval-seconds",
         type=float,
