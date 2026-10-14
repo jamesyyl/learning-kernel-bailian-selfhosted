@@ -11,7 +11,7 @@
 - Docker-backed Codex Chromium 顯示全部 5 Regions／17 Places／37 Roads；逐一點選 17 Places 均與詳情標題相符，點選 Road 可導向合法相鄰 Place。連續十題由 Runtime 判對；真實瀏覽器核對單選、多選、數值與因數樹文字作答，答錯留在同一活動重試。舊 Python host browser report 另保留 multi-classification 與 structured-factorization 覆蓋。
 - Docker 29.8.2／Compose 5.5.1；隔離 Compose project `lk-u1-acceptance-20261014`、`http://127.0.0.1:18084`、暫存 bind-mount SQLite。兩容器 healthy、`/healthz`=`ok`、`/api/ready` schema revision 4。Pack 0.3.4 的 260 候選在容器內驗證並 admission；26 Families 各 10 筆。Runtime restart 前後 DB 筆數相同；seed 在 fresh 與已使用 SQLite 重跑不新增 Surface binding。Docker驗收證據：`docs/evidence/math-u1-docker-sqlite-acceptance-2026-10-14.json`。
 - Root PR #3 保持 Draft，SDK PR #335 保持未合併；合併依賴順序仍是 SDK #335 先於 Root #3。未授權合併。
-- 已推送分支：SDK branch `codex/u1-classification-transfer-supply` head `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root branch `codex/lk-next-decision-loop` 待提交 Docker packaging／seed idempotency 更新。Root gitlink 指向該 SDK SHA。
+- 已推送分支：SDK branch `codex/u1-classification-transfer-supply` head `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root branch `codex/lk-next-decision-loop` Docker packaging／seed idempotency commit `29f32cf34fb2e545d38074536a6eaa73e9e2b15c`。Root gitlink 指向該 SDK SHA；Root PR #3 Open/Draft，SDK PR #335 Open/未合併。
 
 ## 配對恢復 checkpoints（2026-10-14）
 
