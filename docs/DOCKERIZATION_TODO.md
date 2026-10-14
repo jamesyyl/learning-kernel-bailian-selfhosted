@@ -21,6 +21,7 @@
 | 4 | 把 Option 2 練習頁接到 LK | 程式已寫；本機瀏覽器通過（2026-10-12） | 首頁選數學 U1、載入真實 Surface、完成單選及多選兩步、每步收到 Runtime 保存回覆；頁面只送 raw observation，沒有瀏覽器判分。未接通科目與學習摘要標示尚未開放。 |
 | 4.5 | LK 判斷結果與孩子可理解的回饋 | PR #2 已合併 | pinned LK SDK 是 correct/incorrect/indeterminate 唯一判斷來源。百煉只呈現安全 verdict/message/action；答錯留在原題並可重試，correct/indeterminate 依 Runtime directive；前端不取得標準答案或判分規則。exact same-request replay 使用 SQLite response cache。 |
 | 4.6 | LK Next Decision 與實際活動推薦 | Docker／SQLite acceptance PASS（2026-10-14）；PR #3 保持 Draft | canonical Runtime 依 Evidence+Map 決策；Root Map 顯示 5 Regions／17 Places／37 Roads，26 Families 可探索。Pack 0.3.4 的 260 個變體全數獨立驗證並通過 Runtime Pool admission；17 Places 與 26 Families 均取得 canonical Surface／Evidence。同 learner 連續完成 10 題不同活動。Docker 真實瀏覽器核對單選、多選、數值及文字作答。最新記錄見 `docs/evidence/math-u1-docker-sqlite-acceptance-2026-10-14.json`。 |
+| 4.7 | 孩子用語＋引導式因數樹作答 V1 | 部分 Docker／SQLite Chromium 驗收通過（2026-10-14）；單選 E2E 未跑 | 孩子文案、整數數字鍵盤、質因數分解式工具鍵、因數樹逐步文字及手機版均已在隔離同歷史 learner 副本驗收；整數、分解式、因數樹、多選、U1-1 耗盡、HTTP 故障、Journey 返回/捲動及重整續接通過。單選候選在同一 learner 歷史中已耗盡，不建立新 learner 或虛構供應。原始 Observation 請求值原封送入 Runtime 並收到 Evidence receipt；SQLite Evidence projection 不保留字面回答本體，如需逐字答案的重啟後保存，需另訂持久化契約。詳見 `docs/evidence/math-u1-child-language-factor-tree-uat-2026-10-14.md`。 |
 | 5 | NAS 持久化與存取邊界 | 未驗證（不阻擋本機使用） | 本機 bind mount 的 SQLite 已保存 observation/attempt/evidence，Runtime 重啟後計數不變；FnOS/NAS 路徑、區網存取與正式部署仍待另行驗收。此版沒有帳號登入。 |
 | 6 | 簡單 SQLite 備份（後置） | 暫緩，不阻擋開發 | 先完成 LK 活動與作答流程；有正式學習資料後，再加入本機資料庫快照和還原。 |
 | 7 | FnOS/N100 驗收 | 未完成，依賴 2–5 | linux/amd64 冷啟、重啟、資料保存、raw observation 通過；備份後續補上。 |
@@ -83,4 +84,4 @@
 
 ## 目前不可用的部分
 
-PR #1、PR #2 已合併。Issue #4 的 U1 full Map/navigation/generation/Pool/Surface implementation 已完成本機驗收；Root PR #3 保持 Draft，SDK PR #335 保持未合併。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime；FnOS/NAS 正式部署、區網存取邊界與備份仍未驗證。SDK PR #335 基線的兩個 D1 knowledge-read tests 與七個 Worker readiness tests 有獨立既有失敗，詳見 local handoff；不在本任務範圍。
+PR #1、PR #2 已合併。Issue #4 的 U1 full Map/navigation/generation/Pool/Surface implementation 已完成本機驗收；Root PR #3 保持 Draft，SDK PR #335 保持未合併。2026-10-14 孩子用語＋因數樹 V1 已更新 18084 Web（僅 Web 容器；更新前備份、更新後 Evidence digest/count 相同）；隔離副本在 18092 保留供體驗。單選真實 Chromium E2E 仍因同一歷史 learner 的合法候選有限且耗盡而未跑，本輪不宣稱單選或全量供題通過。其他科目、成長與家長摘要、專項/自訂模式尚未接 Runtime；FnOS/NAS 正式部署、區網存取邊界與備份仍未驗證。SDK PR #335 基線的兩個 D1 knowledge-read tests 與七個 Worker readiness tests 有獨立既有失敗，詳見 local handoff；不在本任務範圍。

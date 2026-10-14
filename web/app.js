@@ -33,6 +33,7 @@ let lkPendingNextSurface = null;
 let lkLearningMap = null;
 let lkPendingExplorationFamilyId = null;
 let lkCurrentSurfaceCacheKey = null;
+let lkJourneyReturnState = null;
 
 function lkSurfaceCacheKey(placeId, familyId = null) {
   return JSON.stringify([placeId, familyId || null]);
@@ -144,25 +145,25 @@ renderHome = function renderHomeWithRuntimeAvailability() {
   const reason = card.querySelector(".hero-reason");
   const startButton = card.querySelector("[data-start-subject], #startRecommended");
 
-  if (eyebrow) eyebrow.textContent = isMath ? "已接通 Learning Kernel" : "尚未開放";
+  if (eyebrow) eyebrow.textContent = isMath ? "數學 U1 練習" : "尚未開放";
   if (title) title.textContent = isMath ? "數學 U1" : "尚未開放";
   if (prompt) {
     prompt.textContent = isMath
-      ? "從 U1-1 到 U1-5，沿著完整學習地圖探索數量關係；每一步作答都會交給本機 Runtime 保存。"
-      : `${subjects[selected].name}目前尚未接通 Learning Kernel 活動。`;
+      ? "從 U1-1 到 U1-5，一起探索數量關係；每一步都會留在你的學習紀錄裡。"
+      : `${subjects[selected].name}練習目前尚未開放。`;
   }
   if (reason) {
     reason.hidden = !isMath;
     if (isMath) {
       const label = reason.querySelector("span:first-child");
       const detail = reason.querySelector(".hero-reason-copy");
-      if (label) label.textContent = "本機 Runtime";
-      if (detail) detail.textContent = "出題與學習紀錄由 Learning Kernel 提供。";
+      if (label) label.textContent = "學習紀錄";
+      if (detail) detail.textContent = "完成的練習會留下紀錄，陪你一步步往前。";
     }
   }
   if (startButton) {
     const label = startButton.querySelector("span");
-    if (label) label.textContent = isMath ? "開始 U1 練習" : "尚未開放";
+    if (label) label.textContent = isMath ? "開始數學 U1" : "尚未開放";
     startButton.disabled = !isMath;
     startButton.classList.toggle("local-disabled", !isMath);
     startButton.setAttribute("aria-disabled", String(!isMath));
@@ -189,13 +190,13 @@ renderJourney = function renderRuntimeJourney() {
     item.className = "journey-region-item";
     const message = document.createElement("p");
     message.className = "journey-map-loading";
-    message.textContent = `${subjects[selected].name}尚未接通 Learning Kernel。`;
+    message.textContent = `${subjects[selected].name}練習目前尚未開放。`;
     item.append(message);
     list.append(item);
     if (placeSubject) placeSubject.textContent = subjects[selected].name;
     if (placeTitle) placeTitle.textContent = "尚未開放";
-    if (placeDescription) placeDescription.textContent = `${subjects[selected].name}尚未接通 Learning Kernel 活動。`;
-    if (detailNote) detailNote.textContent = "目前只有數學 U1 可從 Learning Map 載入活動。";
+    if (placeDescription) placeDescription.textContent = `${subjects[selected].name}練習目前尚未開放。`;
+    if (detailNote) detailNote.textContent = "你可以先從數學 U1 的學習旅程開始。";
     roadsList?.replaceChildren();
     taskFamiliesList?.replaceChildren();
   } else if (!lkLearningMap) {
@@ -203,13 +204,13 @@ renderJourney = function renderRuntimeJourney() {
     item.className = "journey-region-item";
     const message = document.createElement("p");
     message.className = "journey-map-loading";
-    message.textContent = "正在讀取數學 U1 的完整學習地圖…";
+    message.textContent = "正在準備學習旅程…";
     item.append(message);
     list.append(item);
     if (placeSubject) placeSubject.textContent = "數學 U1";
-    if (placeTitle) placeTitle.textContent = "正在載入學習地圖";
-    if (placeDescription) placeDescription.textContent = "地點與連線會直接來自已發布的 Knowledge Pack。";
-    if (detailNote) detailNote.textContent = "地圖載入後可從任一 Place 開始，或沿 Pack 路線切換地點。";
+    if (placeTitle) placeTitle.textContent = "正在準備學習旅程";
+    if (placeDescription) placeDescription.textContent = "準備好後，就可以選擇想探索的地方。";
+    if (detailNote) detailNote.textContent = "你可以從任何學習地點開始，也可以沿著學習路線前進。";
     roadsList?.replaceChildren();
     taskFamiliesList?.replaceChildren();
   } else {
@@ -315,7 +316,7 @@ renderJourney = function renderRuntimeJourney() {
       }
     }
     if (detailNote) {
-      detailNote.textContent = `地圖列出 Pack 的全部 ${lkLearningMap.places.length} 個 Place 與 ${lkLearningMap.roads.length} 條 Road。可以讓 Learning Kernel 依學習紀錄安排下一步，也可以選擇這裡的學習做法。`;
+      detailNote.textContent = `這裡有 ${lkLearningMap.places.length} 個學習地點和 ${lkLearningMap.roads.length} 條學習路線。你可以跟著建議前進，也可以選擇想練習的內容。`;
     }
   }
   for (const control of [learnButton, practiceButton]) {
@@ -342,6 +343,28 @@ function lkRememberPackPlace(placeId) {
   } catch {
     // The current selection still works for this tab when browser storage is unavailable.
   }
+}
+
+function lkCaptureJourneyReturnState(placeId) {
+  const list = document.querySelector("#journeyList");
+  lkJourneyReturnState = {
+    subject: selected,
+    placeId,
+    scrollTop: Number.isFinite(list?.scrollTop) ? list.scrollTop : 0,
+  };
+}
+
+function lkReturnToJourney() {
+  const returnState = lkJourneyReturnState;
+  lkClearActivity();
+  if (returnState) {
+    selected = returnState.subject;
+    if (returnState.placeId) lkRememberPackPlace(returnState.placeId);
+  }
+  goPage("journey");
+  const list = document.querySelector("#journeyList");
+  if (list && Number.isFinite(returnState?.scrollTop)) list.scrollTop = returnState.scrollTop;
+  lkJourneyReturnState = null;
 }
 
 function lkAdoptSurfaceRoute(surface) {
@@ -419,7 +442,7 @@ function lkShowUnavailableGrowth() {
   if (!message) {
     message = document.createElement("div");
     message.className = "local-unavailable";
-    message.innerHTML = "<strong>成長紀錄尚未開放</strong><p>Runtime 已接收作答原始紀錄；本機介面目前不讀取或推算學習進度。</p>";
+     message.innerHTML = "<strong>成長紀錄尚未開放</strong><p>練習紀錄會先好好保存；成長故事準備好後再來看看。</p>";
     heading?.after(message);
   }
 }
@@ -433,7 +456,7 @@ function lkShowHomeStatus(ready, detail) {
   mark.textContent = ready ? "✓" : "!";
   mark.style.background = ready ? "var(--lime)" : "var(--coral)";
   const title = document.createElement("span");
-  title.textContent = ready ? "本機 Learning Kernel 已就緒" : "本機 Runtime 尚未就緒";
+  title.textContent = ready ? "數學 U1 已準備好" : "目前還無法開始練習";
   const description = document.createElement("span");
   description.className = "status-detail";
   description.textContent = detail;
@@ -447,27 +470,27 @@ async function lkCheckReadiness() {
     const ready = response.ok && body.ready === true && body.persistence?.status === "ready";
     lkShowHomeStatus(
       ready,
-      ready ? "數學 U1 可練習・作答保存於本機 SQLite" : "請確認 Runtime 與 SQLite 狀態",
+      ready ? "現在可以開始練習，完成的作答會留在學習紀錄裡。" : "請再試一次；如果一直無法開始，請告訴家長。",
     );
   } catch {
-    lkShowHomeStatus(false, "無法連線 Runtime；請稍後重試");
+    lkShowHomeStatus(false, "目前還無法開始練習，請再試一次。");
   }
 }
 
 function lkUpdateShell() {
   const note = document.querySelector(".prototype-note");
-  if (note) note.textContent = "本機數學 U1 已接通 LK Runtime；其他科目與學習摘要尚未開放";
+  if (note) note.textContent = "數學 U1 練習已準備好；今天想從哪個地方開始？";
 
   document.querySelectorAll("#today .quick-mode").forEach((button, index) => {
     const title = button.querySelector("span");
     const detail = button.querySelector("small");
     if (index === 0) {
       if (title) title.textContent = "數學 U1 練習";
-      if (detail) detail.textContent = "載入活動並依序提交作答";
+      if (detail) detail.textContent = "跟著學習旅程，一步一步完成練習";
       button.dataset.mode = "daily";
     } else {
       if (title) title.textContent = index === 1 ? "專項練習" : "自訂練習";
-      if (detail) detail.textContent = "尚未接通 Runtime";
+      if (detail) detail.textContent = "這項練習目前尚未開放";
       button.disabled = true;
       button.classList.add("local-disabled");
       button.setAttribute("aria-disabled", "true");
@@ -480,11 +503,11 @@ function lkUpdateShell() {
     const button = card.querySelector("[data-mode]");
     if (index === 0) {
       if (title) title.textContent = "數學 U1 練習";
-      if (description) description.textContent = "載入 Runtime 活動，完成作答後保存 raw observation。";
+      if (description) description.textContent = "從數學 U1 的學習旅程選擇一個地方開始。";
       if (button) button.textContent = "開始 U1 練習";
     } else {
       if (title) title.textContent = `${index === 1 ? "專項" : "自訂"}練習尚未開放`;
-      if (description) description.textContent = "目前 Runtime 只供應數學 U1 活動。";
+      if (description) description.textContent = "這項練習目前尚未開放。";
       if (button) {
         button.disabled = true;
         button.textContent = "尚未開放";
@@ -495,39 +518,51 @@ function lkUpdateShell() {
   });
 
   const practiceNote = document.querySelector("#practice .practice-note p");
-  if (practiceNote) practiceNote.textContent = "本機目前只開放數學 U1；活動數量與學習狀態由 Runtime 決定。";
+  if (practiceNote) practiceNote.textContent = "目前可以練習數學 U1；從學習旅程選擇想探索的地方。";
   const journeyIntro = document.querySelector("#journey .page-heading p:not(.eyebrow)");
-  if (journeyIntro) journeyIntro.textContent = "目前只有數學 U1 已接通；其他科目尚未開放。";
+  if (journeyIntro) journeyIntro.textContent = "沿著學習地圖探索數量關係，或選擇想練習的地方。";
   const practiceIntro = document.querySelector("#practice .page-heading p:not(.eyebrow)");
-  if (practiceIntro) practiceIntro.textContent = "目前只有數學 U1 今日練習可以使用。";
+  if (practiceIntro) practiceIntro.textContent = "選擇一個學習地點開始練習。";
   const journeyNote = document.querySelector("#journey .detail-note");
-  if (journeyNote) journeyNote.textContent = "數學 U1 可再次進入；其他科目尚未接通。";
+  if (journeyNote) journeyNote.textContent = "你可以從任何學習地點開始，也可以沿著學習路線前進。";
   const statusDetail = document.querySelector(".home-status .status-detail");
-  if (statusDetail) statusDetail.textContent = "數學 U1 可練習・其他科目尚未開放";
+  if (statusDetail) statusDetail.textContent = "選擇一個學習地點，開始今天的練習。";
 }
 
 function lkToast(message) {
   if (typeof toast === "function") toast(message);
 }
 
+function lkIsNoSupplyError(errorCode) {
+  return [
+    "activity_supply_unavailable",
+    "activity_supply_completed",
+    "no_legal_route_candidates",
+    "requested_family_exhausted",
+  ].includes(errorCode);
+}
+
 function lkErrorMessage(errorCode, context = "activity") {
   const messages = {
-    activity_supply_unavailable: "目前沒有可用的已驗證活動。可以返回 Learning Journey 選擇其他地點，或稍後再試。",
-    activity_supply_completed: "這個地點目前沒有尚未使用的合法活動。可以返回 Learning Journey 選擇其他地點。",
-    runtime_http_400: "Runtime 以 HTTP 400 拒絕了請求。請重新選擇 Learning Journey 地點後再試。",
-    runtime_http_500: "Runtime 回應 HTTP 500；請檢查 Runtime 記錄中的執行或儲存錯誤。",
-    runtime_http_502: "瀏覽器未收到 Runtime Surface（HTTP 502）。請檢查 Runtime／Nginx 記錄，再返回 Learning Journey 重試。",
-    runtime_http_503: "Runtime 暫時無法回應（HTTP 503）。請稍後再試，或返回 Learning Journey。",
-    runtime_http_504: "Runtime 回應逾時（HTTP 504）。請返回 Learning Journey 後再試。",
-    runtime_response_invalid: "Runtime 回應格式無法辨識；作答尚未送出。請返回 Learning Journey 後再試。",
+    activity_supply_unavailable: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
+    activity_supply_completed: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
+    no_legal_route_candidates: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
+    requested_family_exhausted: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
+    runtime_http_400: "題目載入出了點問題，請再試一次。",
+    runtime_http_500: "題目載入出了點問題，請再試一次。",
+    runtime_http_502: "題目載入出了點問題，請再試一次。",
+    runtime_http_503: "題目載入出了點問題，請再試一次。",
+    runtime_http_504: "題目載入出了點問題，請再試一次。",
+    runtime_response_invalid: "題目載入出了點問題，請再試一次。",
     vnext_d1_persistence_failed: context === "surface"
-      ? "Runtime 的資料讀取或執行失敗，活動尚未載入。請檢查 Runtime 記錄。"
-      : "本機學習資料未能完成保存，請檢查 Runtime。",
-    trusted_evaluation_lineage_mismatch: "Runtime 無法核對這份作答；請重新載入活動。",
-    trusted_evaluation_response_mismatch: "Runtime 無法核對這份作答；請重新載入活動。",
-    invalid_request: "Runtime 拒絕了不符合契約的作答；請重新載入活動。",
+      ? "題目載入出了點問題，請再試一次。"
+      : "作答沒有送出，請再試一次。",
+    trusted_evaluation_lineage_mismatch: "作答沒有送出，請再試一次。",
+    trusted_evaluation_response_mismatch: "作答沒有送出，請再試一次。",
+    invalid_request: "作答沒有送出，請再試一次。",
+    unsupported_response_capability: "這種作答方式還沒準備好。請回到學習旅程，換一個地方練習。",
   };
-  return messages[errorCode] || "Runtime 暫時無法完成這個步驟，請稍後重試。";
+  return messages[errorCode] || (context === "surface" ? "題目載入出了點問題，請再試一次。" : "作答沒有送出，請再試一次。");
 }
 
 async function lkReadRuntimeJson(response) {
@@ -547,6 +582,23 @@ async function lkReadRuntimeJson(response) {
   return body;
 }
 
+function lkRuntimeRequestError(code, response, body = null) {
+  const error = new Error(code);
+  error.httpStatus = response?.status ?? null;
+  error.runtimeErrorCode = typeof body?.error === "string" ? body.error : null;
+  return error;
+}
+
+function lkLogRuntimeIssue(context, error) {
+  const errorCode = error instanceof Error ? error.message : "unknown_error";
+  const statusFromCode = /^runtime_http_(\d+)$/.exec(errorCode)?.[1];
+  const httpStatus = error?.httpStatus ?? (statusFromCode ? Number(statusFromCode) : "unknown");
+  const runtimeErrorCode = error?.runtimeErrorCode ?? "none";
+  console.error(
+    `[Math U1] ${context} request failed: errorCode=${errorCode}; httpStatus=${httpStatus}; runtimeErrorCode=${runtimeErrorCode}`,
+  );
+}
+
 async function lkFetchSurfaceWithRefillRetry(currentContext) {
   for (let attempt = 0; attempt < LK_SURFACE_REFILL_RETRY_COUNT; attempt += 1) {
     const response = await fetch(LK_SURFACE_URL, {
@@ -561,12 +613,12 @@ async function lkFetchSurfaceWithRefillRetry(currentContext) {
       body.error === "activity_supply_unavailable"
       && body.supply_state === "all_legal_routes_exhausted"
     ) {
-      throw new Error("activity_supply_completed");
+      throw lkRuntimeRequestError("activity_supply_completed", response, body);
     }
     if (body.error !== "activity_supply_unavailable" || attempt + 1 === LK_SURFACE_REFILL_RETRY_COUNT) {
-      throw new Error(body.error || `runtime_http_${response.status}`);
+      throw lkRuntimeRequestError(body.error || `runtime_http_${response.status}`, response, body);
     }
-    lkSetActivityState("等待 Runtime 補充已驗證的練習…", false, "waiting");
+    lkSetActivityState("正在準備題目…", false, "waiting");
     await new Promise((resolve) => setTimeout(resolve, LK_SURFACE_REFILL_RETRY_DELAY_MS));
   }
   throw new Error("activity_supply_unavailable");
@@ -596,6 +648,7 @@ function lkClearActivity() {
   lkPendingNextSurface = null;
   lkCurrentSurfaceCacheKey = null;
   document.querySelector("#backFromActivity").disabled = false;
+  document.querySelector("#activity")?.classList.remove("has-guided-factor-tree");
   document.querySelector("#activityCounter").hidden = true;
   document.querySelector("#activityProgress").hidden = true;
   const submitButton = document.querySelector("#submitAnswer");
@@ -611,33 +664,35 @@ function lkClearActivity() {
 
 async function lkStartU1() {
   if (selected !== "math") {
-    lkToast(`${subjects[selected].name}尚未接通 Learning Kernel，目前不能開始活動。`);
+    lkToast(`${subjects[selected].name}練習目前尚未開放。`);
     return;
   }
   if (!(await lkLoadLearningMap())) {
-    lkToast("目前無法載入數學 U1 學習地圖，請稍後再試。");
+    lkToast("學習旅程載入出了點問題，請再試一次。");
     return;
   }
   const currentPlace = lkLearningMap.places.find(
     (place) => place.id === LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId,
   );
   if (!currentPlace) {
-    lkToast("這個學習地點不在目前的 Pack 地圖中。");
+    lkToast("請重新選擇一個學習地點。");
     return;
   }
+  lkCaptureJourneyReturnState(currentPlace.id);
   const requestedFamilyId = lkPendingExplorationFamilyId;
   lkPendingExplorationFamilyId = null;
   const cacheKey = lkSurfaceCacheKey(currentPlace.id, requestedFamilyId);
   lkClearActivity();
-  document.querySelector("#activityModeLabel").textContent = "數學 U1・本機練習";
+  document.querySelector("#activityModeLabel").textContent = "數學 U1 練習";
   document.querySelector("#activityTitle").textContent = `數學 U1｜${currentPlace.title}`;
   document.querySelector("#activitySubject").textContent = currentPlace.regionId.toUpperCase();
   document.querySelector("#activitySubtopic").textContent = currentPlace.title;
-  document.querySelector("#activityQuestion").textContent = "正在向 Learning Kernel 載入活動…";
+  document.querySelector("#activityQuestion").textContent = "正在準備題目…";
+  document.querySelector("#activityQuestion").hidden = false;
   document.querySelector("#answerHost").replaceChildren();
-  document.querySelector("#hintText").textContent = "活動載入後，可以先自己想想，也可以查看 Runtime 提供的提示。";
+  document.querySelector("#hintText").textContent = "先想一想，遇到困難時可以看看提示。";
   document.querySelector("#hintButtonAside").hidden = true;
-  document.querySelector(".activity-unjudged").textContent = "作答由 Learning Kernel 判斷；百煉只呈現結果";
+  document.querySelector(".activity-unjudged").textContent = "仔細想一想，再寫下你的答案。";
   const submitButton = document.querySelector("#submitAnswer");
   submitButton.hidden = true;
   submitButton.disabled = true;
@@ -672,11 +727,13 @@ async function lkStartU1() {
     }
   } catch (error) {
     const code = error instanceof Error ? error.message : "runtime_unavailable";
-    document.querySelector("#activityQuestion").textContent = "目前無法載入數學 U1 活動";
+    lkLogRuntimeIssue("surface", error);
+    const noSupply = lkIsNoSupplyError(code);
+    document.querySelector("#activityQuestion").hidden = true;
     document.querySelector("#answerHost").replaceChildren();
     submitButton.hidden = true;
     submitButton.disabled = true;
-    lkSetActivityState(lkErrorMessage(code, "surface"), true);
+    lkSetActivityState(lkErrorMessage(code, "surface"), !noSupply, noSupply ? "empty" : "error");
   }
 }
 
@@ -697,10 +754,12 @@ function lkLoadSurface(body, title) {
     : null;
   const selectedPlace = lkLearningMap?.places.find((place) => place.id === selectedPlaceId);
   if (selectedPlace) {
-    document.querySelector("#activitySubject").textContent = selectedPlace.regionId.toUpperCase();
+    const region = lkLearningMap.regions.find((item) => item.id === selectedPlace.regionId);
+    document.querySelector("#activitySubject").textContent = region?.title || "數學 U1";
     document.querySelector("#activitySubtopic").textContent = selectedPlace.title;
   }
-  document.querySelector("#activityTitle").textContent = title;
+  document.querySelector("#activityTitle").textContent = selectedPlace?.title || title;
+  document.querySelector("#activityQuestion").hidden = false;
   document.querySelector("#questionLayout").hidden = false;
   document.querySelector("#lkNextDecision").hidden = true;
   lkRenderStep(firstStepIndex);
@@ -708,19 +767,19 @@ function lkLoadSurface(body, title) {
 
 function lkRouteReason(routeKind) {
   const reasons = {
-    advance: "依照你剛完成的練習，LK 建議接著往前學一小步。",
-    transfer_confirmation: "LK 想讓你把剛練到的想法，帶到不同題目裡試試看。",
-    targeted_confirmation: "LK 建議再確認一次剛練到的方法。",
+    advance: "接著往前學一小步。",
+    transfer_confirmation: "把剛練到的想法，帶到不同題目裡試試看。",
+    targeted_confirmation: "再確認一次剛練到的方法。",
     wrong_turn_discrimination: "換個情境，看看怎麼找出真正有用的線索。",
     remediation: "先用一個小練習，把剛才遇到的地方再弄清楚。",
     return_from_remediation: "回到原來的學習路線，再試一次新的題目。",
     alternate_method: "試試另一種解題方法。",
     alternate_representation: "換一種表示方式，再練習看看。",
-    delayed_confirmation: "LK 想請你再想一次，確認還記得這個方法。",
+    delayed_confirmation: "再想一次，確認還記得這個方法。",
     fluency_practice: "再練習一次，讓這個方法更熟悉。",
-    learner_exploration: "LK 找到一個可以自由探索的小活動。",
+    learner_exploration: "試試一個可以自由探索的小活動。",
   };
-  return reasons[routeKind] || "這是 LK 根據目前學習紀錄找到的下一個活動。";
+  return reasons[routeKind] || "這是接下來可以試試看的練習。";
 }
 
 function lkRecommendationPrompt(surface) {
@@ -748,7 +807,7 @@ function lkShowRecommendationMessage(title, detail, canStart = false) {
 }
 
 async function lkRequestNextDecision() {
-  lkShowRecommendationMessage("正在找下一個適合的練習…", "Learning Kernel 正在查看這次練習的紀錄。", false);
+  lkShowRecommendationMessage("正在找下一個適合的練習…", "正在看看接下來可以練習什麼。", false);
 
   try {
     const body = await lkFetchSurfaceWithRefillRetry({
@@ -769,11 +828,12 @@ async function lkRequestNextDecision() {
     if (lkCanResumeSurface(body)) {
       lkStorePendingSurface(cacheKey, body, placeId);
     }
-    lkShowRecommendationMessage("LK 為你挑了下一個練習", lkRecommendationPrompt(body), true);
+    lkShowRecommendationMessage("接下來可以試試這個練習", lkRecommendationPrompt(body), true);
     document.querySelector("#lkNextDecisionReason").textContent = lkRouteReason(body.execution.observation.routeKind);
   } catch (error) {
     lkPendingNextSurface = null;
     const code = error instanceof Error ? error.message : "runtime_unavailable";
+    lkLogRuntimeIssue("next-suggestion", error);
     if (
       code === "activity_supply_unavailable"
       || code === "activity_supply_completed"
@@ -781,13 +841,13 @@ async function lkRequestNextDecision() {
     ) {
       lkShowRecommendationMessage(
         "這次練習完成了",
-        "目前沒有可接續的數學 U1 活動。你的學習紀錄已保存。",
+        "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
       );
       return;
     }
     lkShowRecommendationMessage(
       "這次練習完成了",
-      "現在暫時無法取得下一步建議。你的學習紀錄已保存，稍後可以再試。",
+      "題目載入出了點問題，請再試一次。",
     );
   }
 }
@@ -797,10 +857,11 @@ function lkStartRecommendedSurface() {
   const surface = lkPendingNextSurface;
   lkPendingNextSurface = null;
   const placeId = LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId;
+  if (!lkJourneyReturnState) lkCaptureJourneyReturnState(placeId);
   const cacheKey = lkSurfaceCacheKey(placeId);
   try {
     lkCurrentSurfaceCacheKey = cacheKey;
-    lkLoadSurface(surface, surface.surface?.payload?.presentation?.title || "數學 U1｜LK 推薦練習");
+    lkLoadSurface(surface, surface.surface?.payload?.presentation?.title || "數學 U1 練習");
     if (lkPoints.length === 1) {
       lkStorePendingSurface(cacheKey, surface, placeId);
     } else {
@@ -824,7 +885,7 @@ function lkRenderStep(stepIndex) {
 
   const blocks = Array.isArray(step.blocks) ? step.blocks : [];
   const contentBlocks = blocks.filter((block) => block.capability === "content.text@1");
-  lkResponseBlock = blocks.find((block) =>
+  const responseCandidate = blocks.find((block) =>
     [
       "response.single-choice@1",
       "response.multi-choice@1",
@@ -832,6 +893,9 @@ function lkRenderStep(stepIndex) {
       "response.text@1",
     ].includes(block.capability),
   );
+  const supportedMathProfile = responseCandidate?.capability !== "response.math@1"
+    || ["integer", "factorization"].includes(responseCandidate?.props?.profile);
+  lkResponseBlock = supportedMathProfile ? responseCandidate : null;
   lkActiveStep = { step, stepIndex, point };
   lkResponseValue = lkResponseBlock?.capability === "response.multi-choice@1" ? [] : null;
   lkUsedHintIds = [];
@@ -844,6 +908,8 @@ function lkRenderStep(stepIndex) {
   lkFinished = false;
 
   const position = lkPoints.findIndex((item) => item.stepIndex === stepIndex) + 1;
+  document.querySelector(".question-card")?.classList.remove("guided-factor-tree");
+  document.querySelector("#activity")?.classList.remove("has-guided-factor-tree");
   const counter = document.querySelector("#activityCounter");
   counter.hidden = lkPoints.length < 2;
   counter.textContent = `第 ${position} / ${lkPoints.length} 題`;
@@ -861,8 +927,13 @@ function lkRenderStep(stepIndex) {
   lkSetAnswerChoicesDisabled(false);
 
   if (!lkResponseBlock) {
-    lkSetActivityState("這個步驟使用了目前頁面尚未支援的回答形式。", true);
+    console.error("[Math U1] unsupported response capability", {
+      activityId: lkSurface?.surface?.payload?.activityId ?? null,
+      responseCapability: step.blocks?.find((block) => block.capability?.startsWith("response."))?.capability ?? null,
+    });
+    lkSetActivityState(lkErrorMessage("unsupported_response_capability"), true);
     document.querySelector("#submitAnswer").hidden = true;
+    document.querySelector("#submitAnswer").disabled = true;
   } else {
     if (contentBlocks.length > 1) {
       const context = document.createElement("p");
@@ -889,8 +960,8 @@ function lkRenderChoices(block) {
   list.setAttribute(
     "aria-label",
     block.capability === "response.multi-choice@1"
-      ? "選擇所有符合條件的答案"
-      : "選擇一個答案",
+      ? "請選出所有符合條件的答案"
+      : "請選一個答案",
   );
 
   choices.forEach((choice, index) => {
@@ -914,16 +985,65 @@ function lkRenderChoices(block) {
 
   const note = document.createElement("p");
   note.className = "runtime-choice-note";
-  note.textContent = block.capability === "response.multi-choice@1" ? "可複選，選好後送出。" : "選一個答案後送出。";
+  note.textContent = block.capability === "response.multi-choice@1"
+    ? "請選出所有符合條件的答案。"
+    : "請選一個答案。";
   document.querySelector("#answerHost").append(list, note);
+}
+
+function lkIsFactorTreeSurface() {
+  const activityId = lkSurface?.surface?.payload?.activityId || lkSurface?.activity?.activityId;
+  return typeof activityId === "string" && (
+    /\/family\/factor-tree(?:\/|$)/.test(activityId)
+    || /\/activity\/factor-tree(?:-|\/|$)/.test(activityId)
+  );
+}
+
+function lkFactorTreeExample(question) {
+  const examples = [
+    [12, "12=3×4；4=2×2"],
+    [18, "18=2×9；9=3×3"],
+    [20, "20=4×5；4=2×2"],
+    [24, "24=3×8；8=2×4；4=2×2"],
+    [30, "30=5×6；6=2×3"],
+    [42, "42=6×7；6=2×3"],
+    [45, "45=5×9；9=3×3"],
+    [70, "70=7×10；10=2×5"],
+    [75, "75=3×25；25=5×5"],
+  ];
+  const prompt = typeof question === "string" ? question : "";
+  const example = examples.find(([root]) => !new RegExp(`(^|\\D)${root}(\\D|$)`).test(prompt));
+  return example
+    ? `格式示範：${example[1]}（示範格式，不是這題的答案）`
+    : "格式示範：原數=兩個因數；還能分解的因數=兩個因數。";
+}
+
+function lkMakeResponseTool(label, className, datasetKey, datasetValue = "") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `response-tool ${className}`;
+  button.textContent = label;
+  button.dataset[datasetKey] = datasetValue;
+  return button;
 }
 
 function lkRenderFreeResponse(block) {
   const props = block.props || {};
   const isText = block.capability === "response.text@1";
+  const isInteger = block.capability === "response.math@1" && props.profile === "integer";
+  const isFactorization = block.capability === "response.math@1" && props.profile === "factorization";
+  const isFactorTree = isText && lkIsFactorTreeSurface();
   const label = document.createElement("label");
   label.className = "runtime-response-label";
-  label.textContent = props.label || (isText ? "輸入作答" : "輸入數學答案");
+  label.textContent = isFactorization
+    ? "請輸入質因數分解式"
+    : isFactorTree
+      ? "請寫下你的因數樹步驟"
+      : isText
+        ? "請寫下你的想法"
+        : isInteger
+          ? "請輸入一個整數"
+          : "請寫下你的想法";
 
   const field = document.createElement(isText ? "textarea" : "input");
   field.className = "runtime-free-response";
@@ -932,23 +1052,76 @@ function lkRenderFreeResponse(block) {
   field.setAttribute("aria-label", label.textContent);
   field.setAttribute("autocomplete", "off");
   if (isText) {
-    field.rows = 3;
-    field.placeholder = "輸入你的想法或解題步驟";
+    field.rows = isFactorTree ? 4 : 3;
+    field.placeholder = isFactorTree ? "每一步寫在分號後面" : "寫下你的想法";
   } else {
     field.type = "text";
-    field.inputMode = props.profile === "factorization" ? "text" : "numeric";
-    field.placeholder = props.profile === "factorization" ? "例如：2×3×3" : "輸入答案";
+    field.inputMode = isFactorization ? "text" : "numeric";
+    field.placeholder = isFactorization ? "用「×」連接每個質數" : "輸入答案";
   }
 
-  const note = document.createElement("p");
-  note.className = "runtime-choice-note";
-  note.textContent = props.profile === "factorization"
-    ? "用乘號連接質因數，不需要指數記號。"
-    : "答案會交由 Learning Kernel 判斷並保存。";
-  document.querySelector("#answerHost").append(label, field, note);
+  const answerHost = document.querySelector("#answerHost");
+  if (isFactorTree) {
+    document.querySelector(".question-card")?.classList.add("guided-factor-tree");
+    document.querySelector("#activity")?.classList.add("has-guided-factor-tree");
+    const guidance = document.createElement("p");
+    guidance.className = "factor-tree-guidance";
+    guidance.textContent = "先把原數拆成兩個相乘的數字；如果拆出的數字還能繼續分解，就用下一步寫出來；直到最後每個數字都是質數。";
+    const example = document.createElement("p");
+    example.className = "factor-tree-example";
+    example.textContent = lkFactorTreeExample(document.querySelector("#activityQuestion").textContent);
+    answerHost.append(guidance, example, label, field);
+  } else {
+    const note = document.createElement("p");
+    note.className = "runtime-choice-note";
+    note.textContent = isFactorization
+      ? "用「×」連接每個質數。"
+      : "仔細想一想，再寫下答案。";
+    answerHost.append(label, field, note);
+  }
+
+  if (isFactorization || isFactorTree) {
+    const toolbar = document.createElement("div");
+    toolbar.className = "response-toolbar";
+    toolbar.setAttribute("role", "group");
+    toolbar.setAttribute("aria-label", "作答小工具");
+    toolbar.append(lkMakeResponseTool("× 乘號", "response-tool-insert", "responseInsert", "×"));
+    if (isFactorTree) {
+      toolbar.append(lkMakeResponseTool("； 下一步", "response-tool-insert", "responseInsert", "； "));
+    }
+    toolbar.append(lkMakeResponseTool(
+      isFactorization ? "清除／重寫" : "重寫",
+      "response-tool-rewrite",
+      "responseRewrite",
+    ));
+    answerHost.append(toolbar);
+  }
+
   field.addEventListener("input", () => {
     lkResponseValue = field.value;
   });
+}
+
+function lkApplyResponseTool(button) {
+  if (lkAnswersLocked || lkPendingCapture) return;
+  const field = document.querySelector("[data-runtime-free-response]");
+  if (!field || field.disabled) return;
+  if (button.hasAttribute("data-response-rewrite")) {
+    field.value = "";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.focus({ preventScroll: true });
+    field.setSelectionRange(0, 0);
+    return;
+  }
+  const insertion = button.dataset.responseInsert;
+  if (typeof insertion !== "string") return;
+  const start = Number.isInteger(field.selectionStart) ? field.selectionStart : field.value.length;
+  const end = Number.isInteger(field.selectionEnd) ? field.selectionEnd : start;
+  field.setRangeText(insertion, start, end, "end");
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.focus({ preventScroll: true });
+  const cursor = start + insertion.length;
+  field.setSelectionRange(cursor, cursor);
 }
 
 function lkSelectChoice(button) {
@@ -983,12 +1156,14 @@ function lkSelectChoice(button) {
 function lkRenderHint(hints) {
   const hintButton = document.querySelector("#hintButtonAside");
   const hintText = document.querySelector("#hintText");
+  const helperCard = hintButton.closest(".helper-card");
   const hint = hints.find((item) => typeof item.id === "string");
+  if (helperCard) helperCard.hidden = !hint;
   hintButton.hidden = !hint;
   hintButton.disabled = !hint;
   hintButton.classList.add("hint-button");
   hintButton.textContent = "查看提示";
-  hintText.textContent = hint ? "先想一想，也可以打開提示。" : "這個步驟沒有附 Runtime 提示。";
+  hintText.textContent = hint ? "先想一想，也可以打開提示。" : "先照自己的想法試試看。";
   hintButton.dataset.hintId = hint?.id || "";
 }
 
@@ -1066,7 +1241,7 @@ async function lkSubmitAnswer() {
 
   const submitButton = document.querySelector("#submitAnswer");
   submitButton.disabled = true;
-  submitButton.textContent = "正在判斷並保存…";
+  submitButton.textContent = "正在送出作答…";
   lkAnswersLocked = true;
   lkSetAnswerChoicesDisabled(true);
   document.querySelector("#backFromActivity").disabled = true;
@@ -1078,7 +1253,9 @@ async function lkSubmitAnswer() {
       cache: "no-store",
     });
     const body = await lkReadRuntimeJson(response);
-    if (response.status !== 202) throw new Error(body.error || "vnext_d1_persistence_failed");
+    if (response.status !== 202) {
+      throw lkRuntimeRequestError(body.error || "vnext_d1_persistence_failed", response, body);
+    }
     const feedback = body.feedback;
     if (
       !feedback ||
@@ -1152,9 +1329,10 @@ async function lkSubmitAnswer() {
     }
   } catch (error) {
     const code = error instanceof Error ? error.message : "vnext_d1_persistence_failed";
+    lkLogRuntimeIssue("observation", error);
     lkSetActivityState(lkErrorMessage(code, "observation"), true);
     submitButton.disabled = false;
-    submitButton.textContent = "重新傳送同一次作答";
+    submitButton.textContent = "重新送出";
     lkAnswersLocked = true;
     lkSetAnswerChoicesDisabled(true);
     document.querySelector("#backFromActivity").disabled = true;
@@ -1169,6 +1347,9 @@ function lkSetAnswerChoicesDisabled(disabled) {
   document.querySelectorAll("[data-runtime-free-response]").forEach((field) => {
     field.disabled = disabled;
     field.setAttribute("aria-disabled", String(disabled));
+  });
+  document.querySelectorAll(".response-tool").forEach((button) => {
+    button.disabled = disabled;
   });
 }
 
@@ -1205,6 +1386,14 @@ function lkHandleClick(event) {
   const recommendedButton = target.closest("#startRecommended");
   const startLkRecommended = target.closest("#startLkRecommended");
   const returnToJourney = target.closest("#returnToJourney");
+  const responseTool = target.closest("[data-response-insert], [data-response-rewrite]");
+
+  if (responseTool) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    lkApplyResponseTool(responseTool);
+    return;
+  }
 
   if (familyChoice) {
     event.preventDefault();
@@ -1256,8 +1445,7 @@ function lkHandleClick(event) {
   if (returnToJourney) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    lkClearActivity();
-    goPage("journey");
+    lkReturnToJourney();
     return;
   }
   if (placeButton) {
@@ -1297,8 +1485,7 @@ document.querySelectorAll("#growth .imprint-chip, #parent [data-parent-action]")
 });
 
 document.querySelector("#backFromActivity")?.addEventListener("click", () => {
-  lkClearActivity();
-  goPage("journey");
+  lkReturnToJourney();
 });
 
 const lkHomeHeroTitle = document.querySelector("#homeHeroMath .hero-title");
