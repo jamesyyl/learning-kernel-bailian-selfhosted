@@ -1,0 +1,141 @@
+{
+  "reportSchema": "math-u1-docker-sqlite-acceptance@1",
+  "date": "2026-10-14",
+  "status": "PASS",
+  "scope": "Docker + SQLite self-hosted Math U1 only; Cloudflare, Workers and D1 deployment checks are out of scope",
+  "docker": {
+    "clientVersion": "29.8.2",
+    "composeVersion": "5.5.1",
+    "project": "lk-u1-acceptance-20261014",
+    "url": "http://127.0.0.1:18084/",
+    "runtimeHealthy": true,
+    "webHealthy": true,
+    "healthz": "ok",
+    "runtimeReady": {
+      "ready": true,
+      "legacyFallback": false,
+      "schemaRevision": 4
+    },
+    "existingProjects8080_8081_8084Unchanged": true
+  },
+  "pack": {
+    "id": "org.learning-kernel.tw-math-g6-u1",
+    "version": "0.3.4",
+    "contentDigest": "sha256:aea207d8eb59619373203dcfaa74614b4b1b6273953257620be54956f6b1cc98",
+    "regions": 5,
+    "places": 17,
+    "roads": 37,
+    "capabilities": 24,
+    "taskFamilies": 26,
+    "generatorRequirements": 26,
+    "fixedActivities": 7,
+    "fixedObservationPoints": 16,
+    "deterministicFamilyAnchors": 26,
+    "generatedAndVerifiedPoolEntries": 260,
+    "poolEntriesPerFamily": 10,
+    "familyAdmissionCoverage": "26/26"
+  },
+  "coverage": {
+    "mapPlacesWithCanonicalSurfaceAndEvidence": "17/17",
+    "familiesWithCanonicalExplorationSurfaceAndEvidence": "26/26",
+    "roadsWithValidFromAndToPlaceIds": "37/37",
+    "browserMapPlaceSelectionsWithMatchingTitles": "17/17",
+    "browserRoadNavigation": [
+      "U1-1/factor-structure to U1-1/composite-number"
+    ],
+    "sqliteRuntimeTrace": "docs/evidence/math-u1-10-activity-trace.json",
+    "supplyMatrix": "docs/evidence/math-u1-supply-matrix-final-0.3.4.json"
+  },
+  "browser": {
+    "browser": "Codex in-app Chromium",
+    "sameLearner": "local-learner-001",
+    "consecutiveActivities": 10,
+    "distinctPrompts": 10,
+    "promptRange": "判斷 2 至判斷 11",
+    "allTenRuntimeVerdicts": "correct",
+    "responseFormats": [
+      {
+        "format": "single-choice classification",
+        "runtimeVerdict": "correct"
+      },
+      {
+        "format": "multi-choice number selection",
+        "runtimeVerdict": "correct"
+      },
+      {
+        "format": "integer numeric input",
+        "runtimeVerdict": "correct"
+      },
+      {
+        "format": "free-text factor tree",
+        "runtimeVerdict": "correct after retry"
+      }
+    ],
+    "incorrectClassificationStayedOnActivityAndRetryPassed": true,
+    "invalidFactorTreeSyntaxStayedOnActivityAndCorrectRetryPassed": true,
+    "nextDecisionAfterRestartLoadedDifferentPrompt": true,
+    "clientSideGradingOrRecommendation": false
+  },
+  "sqlite": {
+    "database": "isolated temporary bind-mounted SQLite; existing user database was not used",
+    "schemaRevision": 4,
+    "runtimeRestart": {
+      "before": {
+        "poolEntries": 260,
+        "issuedSurfaceBindings": 15,
+        "attemptChains": 15,
+        "trustedEvidence": 15,
+        "responseCacheRows": 15,
+        "migrationRows": 4
+      },
+      "after": {
+        "poolEntries": 260,
+        "issuedSurfaceBindings": 15,
+        "attemptChains": 15,
+        "trustedEvidence": 15,
+        "responseCacheRows": 15,
+        "migrationRows": 4
+      }
+    },
+    "finalRowsAfterFurtherBrowserRetry": {
+      "poolEntries": 260,
+      "issuedSurfaceBindings": 16,
+      "attemptChains": 16,
+      "trustedEvidence": 16,
+      "responseCacheRows": 16,
+      "migrationRows": 4
+    },
+    "seedIdempotencyFreshDatabaseAfterTwoRuns": {
+      "status": "PASS",
+      "poolEntries": 260,
+      "issuedSurfaceBindings": 1,
+      "attemptChains": 0,
+      "trustedEvidence": 0,
+      "packActivationEvents": 1,
+      "migrationRows": 4
+    },
+    "seedIdempotencyUsedDatabaseTwoAdditionalRuns": {
+      "status": "PASS",
+      "existingSurfaceBindingPreserved": true,
+      "poolEntryCountStayedAt": 260,
+      "issuedSurfaceBindingCountStayedAt": 16,
+      "attemptEvidenceAndResponseCacheCountsStayedAt": 15
+    }
+  },
+  "implementationFixesVerified": [
+    "Dockerfile.runtime copies the Pack 0.3.4 artifact into the Runtime image.",
+    "docker/render-nginx-config.sh is normalized to LF and covered by .gitattributes.",
+    "api/seed_u1.py reuses and lineage-checks an existing Surface binding instead of consuming another candidate when seed is rerun.",
+    "The final Runtime image containing the idempotency helper loaded a canonical U1-5 model-selection Surface through the Docker-backed browser."
+  ],
+  "checks": {
+    "rootSuiteBeforeFinalSeedIdempotencyChange": "19 passed",
+    "seedIdempotencyRegressionAfterFinalChange": "3 passed in 0.46s",
+    "finalChangedFileRuff": "PASS",
+    "finalPythonCompile": "PASS",
+    "nodeSyntax": "PASS",
+    "gitDiffCheck": "PASS",
+    "cloudflareWorkerD1Tests": "NOT RUN; out of scope",
+    "githubActionsManuallyTriggered": false
+  }
+}

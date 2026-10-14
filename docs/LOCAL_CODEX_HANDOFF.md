@@ -1,17 +1,17 @@
 # 本地 Codex 交接：Option 2 自架開發
 
-更新：2026-10-14。PR #1 merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`、PR #2 均已合併。Issue #4 的 Math U1 全 Map、Pool/Generation、Surface 作答能力已在隔離副本實作並完成本機 Runtime 與真實瀏覽器驗收。Root PR #3 保持 Draft、SDK PR #335 保持未合併；使用者的原始 checkout/WIP、SQLite 與 Docker 均未操作。
+更新：2026-10-14。PR #1 merge SHA `fbab8710315ba3cc6cb7289503ea4f37e3ac703c`、PR #2 均已合併。Issue #4 的 Math U1 全 Map、Pool/Generation、Surface 作答能力已在隔離副本實作並完成 Docker/SQLite Runtime 與真實瀏覽器驗收。Root PR #3 保持 Draft、SDK PR #335 保持未合併；使用者原始 checkout/WIP、既有 SQLite 與 8080/8081/8084 Compose 專案均未碰觸。驗收使用新建的暫存 Compose project、loopback 18084 與獨立 SQLite。
 
 ## Issue #4 最新驗收（2026-10-14）
 
 - Pack 0.3.4：5 Regions、17 Places、37 Roads、24 Capabilities、26 Task Families、26 Generator Requirements；保留 7 個 reviewed Fixed Activities／16 個 observation points，新增 26 個 Family 單點錨點，合計 33 Activities／42 points。0.3.2 artifact 保留，digest `sha256:5feac5c62f0510ef2ecc9851e06d15e879e6e5095838771b35543b534364fed3` 未變。
 - 26 個 exact-Family deterministic generator registrations 各產生 10 個不同題目。260/260 候選均通過獨立 verifier、Pack validators 與 Runtime Pool admission。generator requirement 不單獨算作已實作供應。
-- Root 全測試 19 passed；Python compileall、改動檔 Ruff、`node --check web/app.js` 通過。SDK focused regression 181 passed、2 個舊 D1 knowledge-read 測試排除；同兩測試在乾淨 SDK PR #335 基線也失敗。另 7 個 Worker readiness 基線測試亦在乾淨基線失敗；此工作未改 Cloudflare/D1 readiness 實作。未手動啟動 GitHub Actions。
+- Root 全測試在最後 seed 修正前 19 passed；修正後 seed lineage/reuse regression 3 passed，Docker fresh／既用 SQLite 重跑亦通過。Python compileall、改動檔 Ruff、`node --check web/app.js` 通過。SDK focused regression 181 passed、2 個舊 D1 knowledge-read 測試排除；同兩測試在乾淨 SDK PR #335 基線也失敗。另 7 個 Worker readiness 基線測試亦在乾淨基線失敗；此工作未改 Cloudflare/D1 readiness 實作。未手動啟動 GitHub Actions。
 - 同一 learner 的 Runtime/隔離 SQLite 驗收連續完成 10 個不同 Activity ID／題目；17/17 Places 有 canonical Surface/Evidence；26/26 Map Family exploration 有 Surface/Evidence。證據：`docs/evidence/math-u1-supply-matrix-final-0.3.4.json`、`docs/evidence/math-u1-10-activity-trace.json`。
-- Codex in-app Chromium 真實瀏覽器：看到全 5 Regions／17 Places／37 Roads，並沿 Road 從 U1-2→U1-3→U1-5；單選、多選、multi-classification、整數、結構化質因數分解、文字因數樹均由 Runtime 判定正確。答錯留在同題並可重試；初始題 2 的 LK Next Decision 載入不同題 3。證據：`docs/evidence/math-u1-browser-acceptance-2026-10-14.json`。
-- 真實瀏覽器使用 Python 本機 host 與暫存 SQLite，已停止並清除暫存資料。Root SQLite 全套測試通過。Docker client 29.8.2／Compose 5.5.1 可用，但 Docker Desktop Linux engine named pipe 不存在；Compose build/up 為 NOT RUN，Docker container acceptance BLOCKED。沒有啟動 Docker，也未改既有 8080/8081/8084、原工作目錄、SQLite 或 volumes；未手動執行 Actions。
+- Docker-backed Codex Chromium 顯示全部 5 Regions／17 Places／37 Roads；逐一點選 17 Places 均與詳情標題相符，點選 Road 可導向合法相鄰 Place。連續十題由 Runtime 判對；真實瀏覽器核對單選、多選、數值與因數樹文字作答，答錯留在同一活動重試。舊 Python host browser report 另保留 multi-classification 與 structured-factorization 覆蓋。
+- Docker 29.8.2／Compose 5.5.1；隔離 Compose project `lk-u1-acceptance-20261014`、`http://127.0.0.1:18084`、暫存 bind-mount SQLite。兩容器 healthy、`/healthz`=`ok`、`/api/ready` schema revision 4。Pack 0.3.4 的 260 候選在容器內驗證並 admission；26 Families 各 10 筆。Runtime restart 前後 DB 筆數相同；seed 在 fresh 與已使用 SQLite 重跑不新增 Surface binding。Docker驗收證據：`docs/evidence/math-u1-docker-sqlite-acceptance-2026-10-14.json`。
 - Root PR #3 保持 Draft，SDK PR #335 保持未合併；合併依賴順序仍是 SDK #335 先於 Root #3。未授權合併。
-- 已快轉推送：SDK branch `codex/u1-classification-transfer-supply` head `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root branch `codex/lk-next-decision-loop` implementation commit `8057a37d78b6cc3c485876ab8f23153a2531e740`。Root gitlink 指向該 SDK SHA。
+- 已推送分支：SDK branch `codex/u1-classification-transfer-supply` head `1e46710473c4776cdf3a5806a7b4cf739fed8e82`；Root branch `codex/lk-next-decision-loop` 待提交 Docker packaging／seed idempotency 更新。Root gitlink 指向該 SDK SHA。
 
 ## 配對恢復 checkpoints（2026-10-14）
 

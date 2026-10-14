@@ -20,7 +20,7 @@
 | 3 | 準備 U1 Pack 與合法 Activity Pool 供應 | 本機通過（2026-10-12） | WSL Docker build 後，`docker compose exec runtime python -m api.seed_u1` 首次及再次執行皆成功；同源 Surface HTTP 200、schema `learning-kernel.surface-ir@1`、Pack 0.3.1。 |
 | 4 | 把 Option 2 練習頁接到 LK | 程式已寫；本機瀏覽器通過（2026-10-12） | 首頁選數學 U1、載入真實 Surface、完成單選及多選兩步、每步收到 Runtime 保存回覆；頁面只送 raw observation，沒有瀏覽器判分。未接通科目與學習摘要標示尚未開放。 |
 | 4.5 | LK 判斷結果與孩子可理解的回饋 | PR #2 已合併 | pinned LK SDK 是 correct/incorrect/indeterminate 唯一判斷來源。百煉只呈現安全 verdict/message/action；答錯留在原題並可重試，correct/indeterminate 依 Runtime directive；前端不取得標準答案或判分規則。exact same-request replay 使用 SQLite response cache。 |
-| 4.6 | LK Next Decision 與實際活動推薦 | Python/SQLite 功能驗收 PASS；Docker container acceptance BLOCKED；PR #3 保持 Draft | canonical Runtime 依 Evidence+Map 決策；Root Map 顯示全部 5 Regions／17 Places／37 Roads，26 Families 可由對應 Place 探索。Pack 0.3.4 有 26 個 generator registration、260 個獨立驗證並通過 Runtime admission 的變體；同 learner 連續 10 個不同 Activities，Map walkthrough 17 Places、Family exploration 26/26 均有 Evidence。真實瀏覽器核對六種 response profile。Docker Desktop Linux engine unavailable，Compose build/up NOT RUN；見 2026-10-14 evidence。 |
+| 4.6 | LK Next Decision 與實際活動推薦 | Docker／SQLite acceptance PASS（2026-10-14）；PR #3 保持 Draft | canonical Runtime 依 Evidence+Map 決策；Root Map 顯示 5 Regions／17 Places／37 Roads，26 Families 可探索。Pack 0.3.4 的 260 個變體全數獨立驗證並通過 Runtime Pool admission；17 Places 與 26 Families 均取得 canonical Surface／Evidence。同 learner 連續完成 10 題不同活動。Docker 真實瀏覽器核對單選、多選、數值及文字作答。最新記錄見 `docs/evidence/math-u1-docker-sqlite-acceptance-2026-10-14.json`。 |
 | 5 | NAS 持久化與存取邊界 | 未驗證（不阻擋本機使用） | 本機 bind mount 的 SQLite 已保存 observation/attempt/evidence，Runtime 重啟後計數不變；FnOS/NAS 路徑、區網存取與正式部署仍待另行驗收。此版沒有帳號登入。 |
 | 6 | 簡單 SQLite 備份（後置） | 暫緩，不阻擋開發 | 先完成 LK 活動與作答流程；有正式學習資料後，再加入本機資料庫快照和還原。 |
 | 7 | FnOS/N100 驗收 | 未完成，依賴 2–5 | linux/amd64 冷啟、重啟、資料保存、raw observation 通過；備份後續補上。 |
@@ -58,6 +58,16 @@
 - Codex in-app Chromium 顯示完整 Map；實際沿 Road 從 U1-2→U1-3→U1-5，作答單選、多選、multi-classification、integer、structured-factorization、free text；全部由 Runtime 判定正確。單選錯答留題，可重試答對；初始題 2 的 Next Decision 回傳不同的題 3。詳細：`docs/evidence/math-u1-browser-acceptance-2026-10-14.json`。
 - Local browser acceptance host 使用 TemporaryDirectory SQLite；沒有建置或操作 Docker，也沒有觸及使用者原始 checkout/SQLite。SDK #335、Root #3 均不合併，等待使用者體驗與明確授權。
 - **Docker/SQLite 狀態分開記錄：** SQLite adapter 與隔離 Runtime 全套測試 PASS；Docker client 29.8.2、Compose 5.5.1 存在，但 Docker Desktop Linux engine named pipe 無法連接。Compose build/up NOT RUN、Docker acceptance BLOCKED；不啟動 daemon、不碰既有 8080/8081/8084 環境。
+
+### Docker + SQLite recheck（2026-10-14；取代上面的暫時 BLOCKED）
+
+- Docker Desktop daemon 已可用。只建置與操作隔離 Compose project `lk-u1-acceptance-20261014`、loopback `127.0.0.1:18084` 及專用暫存 SQLite；原 8080／8081／8084 三個專案持續 healthy 且未變動。Runtime 與 Web 均 healthy；`/healthz` 回 `ok`，`/api/ready` 為 schema revision 4。
+- Docker Runtime image 現在確實包含 Math U1 Pack 0.3.4，digest `sha256:aea207d8eb59619373203dcfaa74614b4b1b6273953257620be54956f6b1cc98`。容器內 seed 生成、獨立驗證並 admission 260 entries；SQLite 查詢確認 26 Families、每個各 10 entries。完整 Pack coverage／Map routes 由前述 Python/SQLite acceptance suite 驗證：17/17 Places Surface+Evidence、26/26 Family exploration+Evidence、37 條 Road 的兩端皆為合法 Place。
+- 同一 Docker learner 連續完成題目 2–11，共 10 個不同 prompt，Runtime 判對。真實瀏覽器另完成單選、多選、整數數值、因數樹文字四種答案格式；錯誤答案留在同一活動，重試後由 Runtime 判對。瀏覽器在頁面選取 17/17 Map Places，標題皆與選取項目一致；真實 Road 點選也成功導向相鄰 Place。
+- SQLite Runtime restart 前後保持 260 Pool entries、15 issued bindings、15 attempt chains、15 trusted Evidence、15 response-cache rows、4 migrations；restart 後同源瀏覽器能再取得 LK Next Decision 與活動。後續受測資料總數為 16/16/16/16，沒有資料回退。
+- 發現並修正 `api/seed_u1.py` 的重複執行行為：舊版每次 seed smoke check 都會額外 issue 一個 Surface；新版若已有同 learner／Pack／digest 的 canonical binding，先核對 lineage 並保留現有 binding。全新隔離 SQLite 連跑兩次後仍只有 1 個 binding；已使用中的 Docker SQLite 連跑兩次後 Pool 與 binding／attempt／Evidence／response-cache 筆數不增，兩次均成功。`Dockerfile.runtime` 也已加入 0.3.4 artifact 複製；`.gitattributes` 固定 Nginx renderer shell script 為 LF，避免 Windows CRLF 造成容器啟動失敗。
+- Root 全套測試在 seed idempotency 修正前為 19 passed；修改後新增的三個 seed-lineage／reuse 回歸測試為 3 passed，並用 Docker fresh DB／既用 DB 兩條實際路徑驗收。修改檔 Ruff、Python compileall、Node syntax、diff check 通過。此輪沒有執行 Cloudflare／Worker／D1 專屬測試或 Actions；該類既知基線狀態不變且在本輪範圍外。
+- Docker browser acceptance 的詳細筆數、重啟前後 SQLite 計數與回歸修正見 `docs/evidence/math-u1-docker-sqlite-acceptance-2026-10-14.json`。NAS／FnOS 部署及正式資料備份仍待另行驗收。
 
 ## PR #3 LK Next Decision 舊驗收（2026-10-13；由以上 Issue #4 驗收更新取代）
 

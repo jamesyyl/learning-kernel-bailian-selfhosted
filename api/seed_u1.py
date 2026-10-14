@@ -157,6 +157,40 @@ def _pool_payloads(content_digest: str) -> tuple[dict[str, object], ...]:
     return tuple(payloads)
 
 
+def _has_existing_seed_surface_binding(
+    database: SqliteD1Database,
+    learner_id: str,
+    environment_id: str,
+    content_digest: str,
+) -> bool:
+    row = database.connection.execute(
+        """
+        SELECT canonical_json
+        FROM vnext_issued_activity_bindings
+        WHERE learner_id = ?
+          AND environment_id = ?
+          AND pack_id = ?
+          AND pack_version = ?
+          AND content_digest = ?
+        LIMIT 1
+        """,
+        (learner_id, environment_id, PACK_ID, PACK_VERSION, content_digest),
+    ).fetchone()
+    if row is None:
+        return False
+
+    binding = json.loads(row[0])
+    pack = binding.get("pack", {})
+    if (
+        pack.get("packId") != PACK_ID
+        or pack.get("packVersion") != PACK_VERSION
+        or pack.get("contentDigest") != content_digest
+        or not binding.get("surfaceDigest")
+    ):
+        raise RuntimeError("Existing Surface binding has unexpected Pack lineage")
+    return True
+
+
 async def seed(database_path: Path, learner_id: str, environment_id: str) -> None:
     artifact = read_pack_artifact(ARTIFACT_DIR)
     if (
@@ -252,29 +286,37 @@ async def seed(database_path: Path, learner_id: str, environment_id: str) -> Non
             f"/api/learners/{quote(learner_id, safe='')}/environments/"
             f"{quote(environment_id, safe='')}/packs/{quote(PACK_ID, safe='')}/surface"
         )
-        surface = await request(
-            "POST",
-            surface_path,
-            {
-                "currentContext": {
-                    "currentPlaceLocalId": entry.place_local_id,
-                    "todayPractice": True,
-                },
-            },
-        )
-        if surface.status != 200:
-            raise RuntimeError(
-                f"Surface unavailable ({surface.status}): {surface.body.decode()}"
-            )
-        payload = json.loads(surface.body)
-        if (
-            payload.get("schemaVersion") != "learning-kernel.surface-ir@1"
-            or payload.get("lineage", {}).get("pack", {}).get("version") != PACK_VERSION
+        if _has_existing_seed_surface_binding(
+            database, learner_id, environment_id, artifact.content_digest
         ):
-            raise RuntimeError("Surface has unexpected Pack lineage")
+            surface_note = "existing canonical Surface binding preserved"
+        else:
+            surface = await request(
+                "POST",
+                surface_path,
+                {
+                    "currentContext": {
+                        "currentPlaceLocalId": entry.place_local_id,
+                        "todayPractice": True,
+                    },
+                },
+            )
+            if surface.status != 200:
+                raise RuntimeError(
+                    f"Surface unavailable ({surface.status}): {surface.body.decode()}"
+                )
+            payload = json.loads(surface.body)
+            if (
+                payload.get("schemaVersion") != "learning-kernel.surface-ir@1"
+                or payload.get("lineage", {}).get("pack", {}).get("version")
+                != PACK_VERSION
+            ):
+                raise RuntimeError("Surface has unexpected Pack lineage")
+            surface_note = "canonical Surface ready"
         print(
             f"Math U1 {PACK_VERSION}: {len(pool_payloads)} verified Pool entries "
-            f"({VARIANTS_PER_FAMILY} for each of {len(U1_GENERATOR_REQUIREMENTS.requirements)} families)"
+            f"({VARIANTS_PER_FAMILY} for each of {len(U1_GENERATOR_REQUIREMENTS.requirements)} families); "
+            f"{surface_note}"
         )
     finally:
         database.connection.close()
