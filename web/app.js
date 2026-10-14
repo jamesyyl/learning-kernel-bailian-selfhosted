@@ -510,15 +510,41 @@ function lkToast(message) {
   if (typeof toast === "function") toast(message);
 }
 
-function lkErrorMessage(errorCode) {
+function lkErrorMessage(errorCode, context = "activity") {
   const messages = {
-    activity_supply_unavailable: "Runtime 暫時沒有可用活動，請稍後再試。",
-    vnext_d1_persistence_failed: "本機學習資料未能完成保存，請檢查 Runtime。",
+    activity_supply_unavailable: "目前沒有可用的已驗證活動。可以返回 Learning Journey 選擇其他地點，或稍後再試。",
+    activity_supply_completed: "這個地點目前沒有尚未使用的合法活動。可以返回 Learning Journey 選擇其他地點。",
+    runtime_http_400: "Runtime 以 HTTP 400 拒絕了請求。請重新選擇 Learning Journey 地點後再試。",
+    runtime_http_500: "Runtime 回應 HTTP 500；請檢查 Runtime 記錄中的執行或儲存錯誤。",
+    runtime_http_502: "瀏覽器未收到 Runtime Surface（HTTP 502）。請檢查 Runtime／Nginx 記錄，再返回 Learning Journey 重試。",
+    runtime_http_503: "Runtime 暫時無法回應（HTTP 503）。請稍後再試，或返回 Learning Journey。",
+    runtime_http_504: "Runtime 回應逾時（HTTP 504）。請返回 Learning Journey 後再試。",
+    runtime_response_invalid: "Runtime 回應格式無法辨識；作答尚未送出。請返回 Learning Journey 後再試。",
+    vnext_d1_persistence_failed: context === "surface"
+      ? "Runtime 的資料讀取或執行失敗，活動尚未載入。請檢查 Runtime 記錄。"
+      : "本機學習資料未能完成保存，請檢查 Runtime。",
     trusted_evaluation_lineage_mismatch: "Runtime 無法核對這份作答；請重新載入活動。",
     trusted_evaluation_response_mismatch: "Runtime 無法核對這份作答；請重新載入活動。",
     invalid_request: "Runtime 拒絕了不符合契約的作答；請重新載入活動。",
   };
   return messages[errorCode] || "Runtime 暫時無法完成這個步驟，請稍後重試。";
+}
+
+async function lkReadRuntimeJson(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("json")) {
+    throw new Error(`runtime_http_${response.status}`);
+  }
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error(`runtime_http_${response.status}`);
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new Error("runtime_response_invalid");
+  }
+  return body;
 }
 
 async function lkFetchSurfaceWithRefillRetry(currentContext) {
@@ -529,12 +555,18 @@ async function lkFetchSurfaceWithRefillRetry(currentContext) {
       body: JSON.stringify({ currentContext }),
       cache: "no-store",
     });
-    const body = await response.json();
+    const body = await lkReadRuntimeJson(response);
     if (response.ok) return body;
-    if (body.error !== "activity_supply_unavailable" || attempt + 1 === LK_SURFACE_REFILL_RETRY_COUNT) {
-      throw new Error(body.error || "runtime_unavailable");
+    if (
+      body.error === "activity_supply_unavailable"
+      && body.supply_state === "all_legal_routes_exhausted"
+    ) {
+      throw new Error("activity_supply_completed");
     }
-    lkSetActivityState("Learning Kernel 正在補充已驗證的練習…");
+    if (body.error !== "activity_supply_unavailable" || attempt + 1 === LK_SURFACE_REFILL_RETRY_COUNT) {
+      throw new Error(body.error || `runtime_http_${response.status}`);
+    }
+    lkSetActivityState("等待 Runtime 補充已驗證的練習…", false, "waiting");
     await new Promise((resolve) => setTimeout(resolve, LK_SURFACE_REFILL_RETRY_DELAY_MS));
   }
   throw new Error("activity_supply_unavailable");
@@ -606,6 +638,9 @@ async function lkStartU1() {
   document.querySelector("#hintText").textContent = "活動載入後，可以先自己想想，也可以查看 Runtime 提供的提示。";
   document.querySelector("#hintButtonAside").hidden = true;
   document.querySelector(".activity-unjudged").textContent = "作答由 Learning Kernel 判斷；百煉只呈現結果";
+  const submitButton = document.querySelector("#submitAnswer");
+  submitButton.hidden = true;
+  submitButton.disabled = true;
   goPage("activity");
 
   try {
@@ -639,8 +674,9 @@ async function lkStartU1() {
     const code = error instanceof Error ? error.message : "runtime_unavailable";
     document.querySelector("#activityQuestion").textContent = "目前無法載入數學 U1 活動";
     document.querySelector("#answerHost").replaceChildren();
-    document.querySelector("#submitAnswer").hidden = true;
-    lkSetActivityState(lkErrorMessage(code), true);
+    submitButton.hidden = true;
+    submitButton.disabled = true;
+    lkSetActivityState(lkErrorMessage(code, "surface"), true);
   }
 }
 
@@ -738,7 +774,11 @@ async function lkRequestNextDecision() {
   } catch (error) {
     lkPendingNextSurface = null;
     const code = error instanceof Error ? error.message : "runtime_unavailable";
-    if (code === "activity_supply_unavailable" || code === "no_legal_route_candidates") {
+    if (
+      code === "activity_supply_unavailable"
+      || code === "activity_supply_completed"
+      || code === "no_legal_route_candidates"
+    ) {
       lkShowRecommendationMessage(
         "這次練習完成了",
         "目前沒有可接續的數學 U1 活動。你的學習紀錄已保存。",
@@ -1037,7 +1077,7 @@ async function lkSubmitAnswer() {
       body: JSON.stringify(capture),
       cache: "no-store",
     });
-    const body = await response.json();
+    const body = await lkReadRuntimeJson(response);
     if (response.status !== 202) throw new Error(body.error || "vnext_d1_persistence_failed");
     const feedback = body.feedback;
     if (
@@ -1112,7 +1152,7 @@ async function lkSubmitAnswer() {
     }
   } catch (error) {
     const code = error instanceof Error ? error.message : "vnext_d1_persistence_failed";
-    lkSetActivityState(lkErrorMessage(code), true);
+    lkSetActivityState(lkErrorMessage(code, "observation"), true);
     submitButton.disabled = false;
     submitButton.textContent = "重新傳送同一次作答";
     lkAnswersLocked = true;
@@ -1258,7 +1298,7 @@ document.querySelectorAll("#growth .imprint-chip, #parent [data-parent-action]")
 
 document.querySelector("#backFromActivity")?.addEventListener("click", () => {
   lkClearActivity();
-  goPage("today");
+  goPage("journey");
 });
 
 const lkHomeHeroTitle = document.querySelector("#homeHeroMath .hero-title");

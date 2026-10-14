@@ -190,6 +190,7 @@ class U1PoolReplenishmentLifecycleTests(unittest.IsolatedAsyncioTestCase):
                         "currentContext": {
                             "currentPlaceLocalId": place_id,
                             "todayPractice": True,
+                            "learnerExplorationTaskFamilyIds": [family_id],
                         }
                     },
                     separators=(",", ":"),
