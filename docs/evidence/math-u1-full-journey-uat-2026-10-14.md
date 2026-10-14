@@ -75,7 +75,7 @@
 ## Git 與交付
 
 - SDK PR #335 保持 Open；最終 Runtime Trusted Evaluation／route SHA：`851698a7a79d7a6942692e97f8a54f025d09a9c2`。
-- Root PR #3 head `6731e3397cfbdf8d63df1aa2681cecec736bdeef` 保持 Draft、未合併；SDK PR #335 head `851698a7a79d7a6942692e97f8a54f025d09a9c2` 保持 Open、未合併。
+- Root PR #3 保持 Draft、未合併（目前分支 SHA 見 PR #3）；SDK PR #335 head `851698a7a79d7a6942692e97f8a54f025d09a9c2` 保持 Open、未合併。
 - Checkpoints：Root diagnosis `a9ec086a4754295ea9c242d865a76734fe3e0d7b`、Root Runtime `76afc58f4b95bda21af93a007ab20a296c49f37c`；SDK initial safe checkpoint `bdc2c3c20a0ed62554e95223aef2b4f1566193df`、SDK pre-API local route checkpoint `c39691052493dcb705ee0a61c0d94851dc90ccae`、SDK evaluator local checkpoint `a021d8497d32e4b43807a55471cbc53388b74792`。
 
 本輪對 18084 只做 Runtime/Web/Refiller image 更新及 no-supply safe check；原始 learner 的 Evidence 與 SQLite 內容未改。`18089` 是供使用者查看 17 Place 後 learner history 的副本；`18090` 是 26 Family 與多 learner 的獨立副本。
