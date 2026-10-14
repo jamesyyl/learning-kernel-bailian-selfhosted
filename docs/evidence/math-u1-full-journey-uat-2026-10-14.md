@@ -18,8 +18,8 @@
 - 18089 Journey 副本由該備份逐位元複製（初始 hash 相同）。17 Place 回合後，一致性備份 SHA-256：`c82663679cc98347312ac9ab92f83255873d40aca92c01976a5653e4bfb06fd2`；Pool 268、bindings 87、Evidence 66、Attempt Chains 66、response cache 66、`integrity_check=ok`。
 - Runtime／refiller 重啟續學後副本 SHA-256：`6825aced75adb8291748b1e52b277d9200bfa7f5863dfc4d9758c431f90da6cd`；Pool 268、bindings 88、Evidence 67、Attempt Chains 67、response cache 67、`integrity_check=ok`。
 - Nginx `nginx -t` 成功。測試專案只使用獨立 image tags 與 18088／18089／18090；原 18084 learner Evidence 尚未被本輪測試請求寫入。
-- 更新 18084 前再做一致性備份；SHA-256 仍為 `ee31786da9d9a096057f228801ea3ff4b3331c88d444523f3b9e92ea21d6ae31`，Evidence canonical rows digest `d91a268b45e6c47ed453a915623460f19d81dcd5495129203c3ddf5958048a45`。更新前 Counts 與初始備份一致：Pool 268、bindings 71、Evidence 46、Attempt Chains 46、response cache 46。
-- 18084 現已使用 Runtime source SHA `851698a7a79d7a6942692e97f8a54f025d09a9c2`，Runtime/Web/Refiller healthy，schema rev4；`/api/ready` 回 200，Web image 內 `nginx -t` 成功。以該真實 learner 明確要求已耗盡的 direct-classification Family，回 503 `requested_family_exhausted`；請求前後 bindings、Evidence、Attempt Chains、response cache 仍是 71／46／46／46，Evidence digest 與備份相同。沒有在 18084 提交作答或新增 Evidence。8080／8081／8084 containers 保持原狀。
+- 更新 18084 前再做一致性備份；SHA-256 仍為 `ee31786da9d9a096057f228801ea3ff4b3331c88d444523f3b9e92ea21d6ae31`，Evidence canonical rows digest `d91a268b45e6c47ed453a915623460f19d81dcd5495129203c3ddf5958048a45`。更新前 Pool 268、bindings 71、Evidence 46、Attempt Chains 46、response cache 46。
+- 18084 現已使用 Runtime source SHA `851698a7a79d7a6942692e97f8a54f025d09a9c2`，Runtime/Web/Refiller healthy，schema rev4；`/api/ready` 回 200，Web image 內 `nginx -t` 成功。以該真實 learner 明確要求已耗盡的 direct-classification Family，回 503 `requested_family_exhausted`，沒有建立 binding。再由 Chromium 的 Learning Journey 普通路線進入 U1-5 問題結構，Live Runtime 回 200 Activity `generated/u1-5/family/problem-structure-recognition/variant-0`，頁面已留在可作答題目供使用者體驗。此安全驗證新增 1 個待答 binding（71→72），沒有提交作答；Pool 仍 268，Evidence／Attempt Chains／response cache 仍 46，Evidence digest 與更新前備份相同。8080／8081／8084 containers 保持原狀。
 
 ## 同 learner、同 SQLite 的 Chromium 17 Place 回合
 
@@ -67,7 +67,7 @@
 | 同 learner 26 Family supply | PARTIAL：23／26 可供、3／26 合法耗盡 | Pack 0.3.4 變體上限下沒有無限補題；按要求如實保留阻擋狀態 |
 | 多 learner 共用 Pool、Evidence 隔離 | PASS | 同 SQLite 副本，主 learner 68、第二 learner 1，重送不增加 Evidence |
 | 同一歷史 learner 新增十個連續活動 | NOT RUN | 本輪 17 Place 歷史 UAT 已新增 16 個完成 Surface；不以舊的空白／分開 learner 測試充當本輪結果 |
-| 18084 更新後安全核對 | PASS | Runtime source SHA `851698a`、health 200、Nginx config OK；安全 no-supply 請求前後 Evidence rows/digest 及所有重要 row counts 相同 |
+| 18084 更新後安全核對 | PASS | Runtime source SHA `851698a`、health 200、Nginx config OK；耗盡請求不寫入，正常 Journey Surface HTTP 200；僅新增 1 個待答 binding，Evidence rows/digest 不變 |
 | Root SQLite／refiller／seed／HTTP host 回歸 | PASS | 11 項通過；先前一般 Place 耗盡測試需改為明確 Family exploration，更新後 `test_u1_pool_replenishment.py` 1 passed |
 | Cloudflare／Workers／Pages／Access／WAF 專屬測試 | OUT OF SCOPE／NOT RUN | 本輪不修改、不重跑 |
 
