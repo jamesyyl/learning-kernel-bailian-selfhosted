@@ -108,17 +108,32 @@
     },
     "sqlite": {
       "integrity": "ok",
-      "bindings": 41,
+      "bindings": 42,
       "attemptChains": 35,
       "evidence": 35,
       "responseCache": 35
     },
-    "browser": "A separate Chromium tab opened U1-1 through Journey, loaded question 12, and showed Runtime retry feedback after a wrong answer. The user's existing U1-5 tab was left untouched.",
+    "browser": "A Chromium tab opened U1-1 through Journey and loaded prompt 12; wrong answer showed Runtime retry. After the user's network repair, a fresh direct recheck loaded prompt 13 from the same U1-1 route. The user's existing U1-5 tab remained untouched.",
     "untouchedProjects": [
       "8080",
       "8081",
       "8084"
-    ]
+    ],
+    "networkRecheck": {
+      "status": "PASS",
+      "directApiReadyHttpStatus": 200,
+      "readinessSchemaRevision": 4,
+      "chromiumRoute": "Learning Journey → U1-1 → prompt 13 loaded",
+      "sqliteAfterRecheck": {
+        "integrity": "ok",
+        "pool": 268,
+        "bindings": 42,
+        "evidence": 35,
+        "attemptChains": 35,
+        "responseCache": 35
+      },
+      "proxyNote": "PowerShell Invoke-WebRequest used a stale local HTTP_PROXY and failed; direct curl and Chromium succeeded. No system proxy settings were changed."
+    }
   },
   "tests": {
     "rootFocused": "14 passed, 3 subtests passed",
