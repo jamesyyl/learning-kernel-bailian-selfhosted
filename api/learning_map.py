@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from learning_kernel.knowledge_packs.math_u1_vnext.pack import U1_PACK
+from learning_kernel.knowledge_packs.vnext_task_family import TaskFamilyNavigationUse
 
 
 def learning_map_payload() -> dict[str, object]:
@@ -41,6 +42,23 @@ def learning_map_payload() -> dict[str, object]:
                     journeys_by_place[ref.local_id] = (
                         len(points), initial_family_id, starting_places[0]
                     )
+
+    # An explicit Place should first offer practice of its own observable
+    # capability; alphabetic Family IDs are not a pedagogical priority.
+    def focused_priority(family_id: str) -> tuple[int, str]:
+        family = next(
+            item for item in pack.task_families.families
+            if item.local_id == family_id
+        )
+        uses = family.navigation_uses
+        if TaskFamilyNavigationUse.FLUENCY_PRACTICE in uses:
+            return (0, family_id)
+        if (
+            TaskFamilyNavigationUse.ALTERNATE_METHOD in uses
+            or TaskFamilyNavigationUse.ALTERNATE_REPRESENTATION in uses
+        ):
+            return (1, family_id)
+        return (2, family_id)
 
     task_families = []
     family_ids_by_place: dict[str, set[str]] = {
@@ -109,7 +127,8 @@ def learning_map_payload() -> dict[str, object]:
                 "regionId": region_by_place[place.local_id].local_id,
                 "taskFamilyIds": sorted(family_ids_by_place[place.local_id]),
                 "focusedTaskFamilyIds": sorted(
-                    focused_family_ids_by_place[place.local_id]
+                    focused_family_ids_by_place[place.local_id],
+                    key=focused_priority,
                 ),
                 "journeyTaskFamilyId": (
                     journeys_by_place[place.local_id][1]
