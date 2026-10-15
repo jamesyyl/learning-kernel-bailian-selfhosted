@@ -37,8 +37,9 @@ let lkJourneyReturnState = null;
 let lkSuggestedPlaceId = null;
 let lkFocusedFallbackFamilies = [];
 
-function lkSurfaceCacheKey(placeId, familyId = null) {
-  return JSON.stringify([placeId, familyId || null]);
+function lkSurfaceCacheKey(placeId, familyId = null, todayPractice = true) {
+  // A learning Surface and a daily-practice Surface have different evidence contexts.
+  return JSON.stringify([placeId, familyId || null, todayPractice ? "practice" : "learning"]);
 }
 
 function lkReadPendingSurfaceCache() {
@@ -711,10 +712,10 @@ function lkStartFocusedPlace() {
     lkToast(`這裡有多種練習，先從「${family?.title || "基礎練習"}」開始，也能點下方其他題型。`);
   }
   lkPendingExplorationFamilyId = familyId;
-  void lkStartU1();
+  void lkStartU1({ todayPractice: false });
 }
 
-async function lkStartU1() {
+async function lkStartU1({ todayPractice = true } = {}) {
   if (selected !== "math") {
     lkToast(`${subjects[selected].name}練習目前尚未開放。`);
     return;
@@ -733,9 +734,9 @@ async function lkStartU1() {
   lkCaptureJourneyReturnState(currentPlace.id);
   const requestedFamilyId = lkPendingExplorationFamilyId;
   lkPendingExplorationFamilyId = null;
-  const cacheKey = lkSurfaceCacheKey(currentPlace.id, requestedFamilyId);
+  const cacheKey = lkSurfaceCacheKey(currentPlace.id, requestedFamilyId, todayPractice);
   lkClearActivity();
-  document.querySelector("#activityModeLabel").textContent = "數學 U1 練習";
+  document.querySelector("#activityModeLabel").textContent = todayPractice ? "數學 U1 練習" : "數學 U1 學習";
   document.querySelector("#activityTitle").textContent = `數學 U1｜${currentPlace.title}`;
   document.querySelector("#activitySubject").textContent = currentPlace.regionId.toUpperCase();
   document.querySelector("#activitySubtopic").textContent = currentPlace.title;
@@ -763,7 +764,7 @@ async function lkStartU1() {
     }
 
     const startRequest = {
-      currentContext: { ...LK_SURFACE_REQUEST.currentContext },
+      currentContext: { ...LK_SURFACE_REQUEST.currentContext, todayPractice },
     };
     if (requestedFamilyId) {
       startRequest.currentContext.learnerExplorationTaskFamilyIds = [requestedFamilyId];
@@ -789,7 +790,7 @@ async function lkStartU1() {
       const fallback = lkFocusedFallbackFamilies.shift();
       lkPendingExplorationFamilyId = fallback;
       lkSetActivityState("這種題型已經練完，正在找同一個知識點的其他練習…");
-      await lkStartU1();
+      await lkStartU1({ todayPractice });
       return;
     }
     document.querySelector("#activityQuestion").hidden = true;
