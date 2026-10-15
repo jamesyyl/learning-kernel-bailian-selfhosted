@@ -73,20 +73,37 @@ def validate_test_contract(sdk: Path) -> None:
     for directory, selected in ((ROOT, SELFHOST_TESTS), (sdk, CANONICAL_SDK_TESTS)):
         missing = [entry for entry in selected if not (directory / entry).is_file()]
         if missing:
-            raise RuntimeError(f"Mandatory test files missing from {directory}: {missing}")
-    actual = {path.relative_to(ROOT).as_posix() for path in (ROOT / "tests").glob("test_*.py")}
+            raise RuntimeError(
+                f"Mandatory test files missing from {directory}: {missing}"
+            )
+    actual = {
+        path.relative_to(ROOT).as_posix() for path in (ROOT / "tests").glob("test_*.py")
+    }
     unclassified = sorted(actual - set(SELFHOST_TESTS))
     if unclassified:
         raise RuntimeError(
             "New selfhost tests require explicit gate classification: "
             + ", ".join(unclassified)
         )
-    forbidden = ("wrangler", "cloudflare", "test_runtime_vnext_worker.py", "test_runtime_vnext_d1_migrations.py")
-    if any(term in entry.casefold() for entry in (*SELFHOST_TESTS, *CANONICAL_SDK_TESTS) for term in forbidden):
-        raise RuntimeError("Cloudflare deployment tests must not enter the selfhost gate.")
+    forbidden = (
+        "wrangler",
+        "cloudflare",
+        "test_runtime_vnext_worker.py",
+        "test_runtime_vnext_d1_migrations.py",
+    )
+    if any(
+        term in entry.casefold()
+        for entry in (*SELFHOST_TESTS, *CANONICAL_SDK_TESTS)
+        for term in forbidden
+    ):
+        raise RuntimeError(
+            "Cloudflare deployment tests must not enter the selfhost gate."
+        )
 
 
-def run_group(label: str, root: Path, paths: tuple[str, ...], sdk: Path) -> dict[str, object]:
+def run_group(
+    label: str, root: Path, paths: tuple[str, ...], sdk: Path
+) -> dict[str, object]:
     env = os.environ.copy()
     env["PYTHONPATH"] = os.pathsep.join(
         (str(ROOT), str(sdk), env.get("PYTHONPATH", ""))
@@ -98,13 +115,25 @@ def run_group(label: str, root: Path, paths: tuple[str, ...], sdk: Path) -> dict
         sdk / "apps" / "runtime_vnext" / "migrations"
     )
     command = [
-        sys.executable, "-m", "pytest",
-        "-q", "-ra", "-o", "addopts=", "--tb=short", *paths,
+        sys.executable,
+        "-m",
+        "pytest",
+        "-q",
+        "-ra",
+        "-o",
+        "addopts=",
+        "--tb=short",
+        *paths,
     ]
     print(f"=== {label} ({len(paths)} required files) ===", flush=True)
     result = subprocess.run(
-        command, cwd=root, env=env, text=True,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+        command,
+        cwd=root,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
     )
     print(result.stdout, end="" if result.stdout.endswith("\n") else "\n", flush=True)
     summary = result.stdout.splitlines()[-1] if result.stdout.splitlines() else ""
@@ -112,8 +141,14 @@ def run_group(label: str, root: Path, paths: tuple[str, ...], sdk: Path) -> dict
     passed = result.returncode == 0 and not skipped
     if skipped:
         print(f"{label}: skipped tests are NOT a passing gate.", flush=True)
-    return {"name": label, "passed": passed, "exitCode": result.returncode,
-            "summary": summary, "skipped": skipped, "testFiles": len(paths)}
+    return {
+        "name": label,
+        "passed": passed,
+        "exitCode": result.returncode,
+        "summary": summary,
+        "skipped": skipped,
+        "testFiles": len(paths),
+    }
 
 
 def _json_get(url: str) -> dict[str, object]:
@@ -139,9 +174,13 @@ def check_live_service(url: str, database_path: Path, sdk: Path) -> dict[str, ob
     places = map_data.get("places")
     if not isinstance(places, list) or len(places) < MIN_PLACES:
         raise RuntimeError(f"Selfhost learning map has fewer than {MIN_PLACES} Places.")
-    pack_scope = sdk / "learning_kernel" / "knowledge_packs" / "math_u1_vnext" / "scope.py"
+    pack_scope = (
+        sdk / "learning_kernel" / "knowledge_packs" / "math_u1_vnext" / "scope.py"
+    )
     release_match = re.search(
-        r'^PACK_VERSION = "([^"]+)"', pack_scope.read_text(encoding="utf-8"), re.MULTILINE
+        r'^PACK_VERSION = "([^"]+)"',
+        pack_scope.read_text(encoding="utf-8"),
+        re.MULTILINE,
     )
     if release_match is None:
         raise RuntimeError("Pinned SDK U1 Pack version cannot be determined.")
@@ -158,7 +197,9 @@ def check_live_service(url: str, database_path: Path, sdk: Path) -> dict[str, ob
         violations = connection.execute("PRAGMA foreign_key_check").fetchall()
         if violations:
             raise RuntimeError(f"SQLite foreign key violations: {len(violations)}")
-        metadata = dict(connection.execute("SELECT key, value FROM vnext_runtime_metadata"))
+        metadata = dict(
+            connection.execute("SELECT key, value FROM vnext_runtime_metadata")
+        )
         if metadata.get("schema_family") != EXPECTED_SCHEMA_FAMILY:
             raise RuntimeError("SQLite schema family differs from Runtime.")
         if metadata.get("schema_revision") != EXPECTED_SCHEMA_REVISION:
@@ -169,7 +210,9 @@ def check_live_service(url: str, database_path: Path, sdk: Path) -> dict[str, ob
             )
         )
         if set(migrations) != set(MIGRATION_FILENAMES):
-            raise RuntimeError("SQLite recorded migration names do not match pinned SDK.")
+            raise RuntimeError(
+                "SQLite recorded migration names do not match pinned SDK."
+            )
         migration_dir = sdk / "apps" / "runtime_vnext" / "migrations"
         for name in MIGRATION_FILENAMES:
             path = migration_dir / name
@@ -177,19 +220,36 @@ def check_live_service(url: str, database_path: Path, sdk: Path) -> dict[str, ob
                 raise RuntimeError(f"Pinned SDK migration missing: {name}")
             if migrations[name] != sha256(path.read_bytes()).hexdigest():
                 raise RuntimeError(f"SQLite migration checksum mismatch: {name}")
-    return {"name": "isolated-live-http-and-sqlite", "passed": True,
-            "places": len(places), "sqliteIntegrity": "ok",
-            "packVersion": release_match.group(1),
-            "schemaRevision": EXPECTED_SCHEMA_REVISION, "migrations": len(MIGRATION_FILENAMES)}
+    return {
+        "name": "isolated-live-http-and-sqlite",
+        "passed": True,
+        "places": len(places),
+        "sqliteIntegrity": "ok",
+        "packVersion": release_match.group(1),
+        "schemaRevision": EXPECTED_SCHEMA_REVISION,
+        "migrations": len(MIGRATION_FILENAMES),
+    }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--sdk-dir", type=Path, default=ROOT / "vendor" / "learning-kernel-sdk")
+    parser.add_argument(
+        "--sdk-dir", type=Path, default=ROOT / "vendor" / "learning-kernel-sdk"
+    )
     parser.add_argument("--scope", choices=("both", "selfhost", "sdk"), default="both")
-    parser.add_argument("--live-url", help="Explicit isolated Docker URL, e.g. http://127.0.0.1:18085")
-    parser.add_argument("--sqlite-db", type=Path, help="SQLite file belonging to that isolated Docker instance")
-    parser.add_argument("--report", type=Path, help="Optional JSON report path (never writes to learner DB)")
+    parser.add_argument(
+        "--live-url", help="Explicit isolated Docker URL, e.g. http://127.0.0.1:18085"
+    )
+    parser.add_argument(
+        "--sqlite-db",
+        type=Path,
+        help="SQLite file belonging to that isolated Docker instance",
+    )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        help="Optional JSON report path (never writes to learner DB)",
+    )
     args = parser.parse_args()
     if sys.version_info < (3, 12):
         parser.error("The pinned SDK acceptance gate requires Python 3.12 or newer.")
@@ -201,12 +261,20 @@ def main() -> int:
     if args.scope in {"both", "selfhost"}:
         results.append(run_group("selfhost-sqlite", ROOT, SELFHOST_TESTS, sdk))
     if args.scope in {"both", "sdk"}:
-        results.append(run_group("lk-canonical-portable", sdk, CANONICAL_SDK_TESTS, sdk))
+        results.append(
+            run_group("lk-canonical-portable", sdk, CANONICAL_SDK_TESTS, sdk)
+        )
     if args.live_url:
         try:
             results.append(check_live_service(args.live_url, args.sqlite_db, sdk))
         except RuntimeError as exc:
-            results.append({"name": "isolated-live-http-and-sqlite", "passed": False, "error": str(exc)})
+            results.append(
+                {
+                    "name": "isolated-live-http-and-sqlite",
+                    "passed": False,
+                    "error": str(exc),
+                }
+            )
     success = all(result["passed"] for result in results)
     report = {
         "schemaVersion": "bailian.selfhost-acceptance@1",
@@ -219,7 +287,9 @@ def main() -> int:
     }
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        args.report.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
     print("SELFHOST_GATE=" + json.dumps(report, ensure_ascii=False), flush=True)
     return 0 if success else 1
 
