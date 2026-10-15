@@ -16,6 +16,7 @@ COPY vendor/learning-kernel-sdk/apps/runtime_vnext/migrations/ /opt/lk/apps/runt
 COPY vendor/learning-kernel-sdk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.1/ /opt/lk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.1/
 COPY vendor/learning-kernel-sdk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.2/ /opt/lk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.2/
 COPY vendor/learning-kernel-sdk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.4/ /opt/lk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.4/
+COPY vendor/learning-kernel-sdk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.6/ /opt/lk/artifacts/knowledge-packs/org.learning-kernel.tw-math-g6-u1/0.3.6/
 
 RUN mkdir -p /data
 
