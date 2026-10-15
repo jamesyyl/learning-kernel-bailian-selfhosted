@@ -15,6 +15,7 @@ from urllib.parse import quote
 
 from apps.runtime_vnext.worker.runtime_http import compose_vnext_runtime_service
 from learning_kernel.activity_generation.registry import GeneratorRegistry
+from learning_kernel.domain.errors import ValidationError
 from learning_kernel.knowledge_packs.artifact import read_pack_artifact
 from learning_kernel.knowledge_packs.math_u1_vnext.deterministic_generators import (
     build_u1_deterministic_generator_registry,
@@ -261,14 +262,21 @@ async def replenish_once(
                 else (requirement,)
             )
             pending: list[tuple[str, str, str, dict[str, object]]] = []
+            domain_exhausted = False
             for part in parts:
-                payload = _pool_payload_for_variant(
-                    content_digest=content_digest,
-                    requirement=part,
-                    variant_index=variant_index,
-                    registry=registry,
-                    verifier=verifier,
-                )
+                try:
+                    payload = _pool_payload_for_variant(
+                        content_digest=content_digest,
+                        requirement=part,
+                        variant_index=variant_index,
+                        registry=registry,
+                        verifier=verifier,
+                    )
+                except ValidationError as error:
+                    if error.code != "math_u1_compound_domain_exhausted":
+                        raise
+                    domain_exhausted = True
+                    break
                 generated = cast(dict[str, object], payload["generatedActivityArtifact"])
                 activity_id = str(generated["local_id"])
                 prompt = str(
@@ -290,6 +298,8 @@ async def replenish_once(
                     pending.clear()
                     break
                 pending.append((activity_id, prompt, entry_id, payload))
+            if domain_exhausted:
+                break
             if len(pending) != len(parts):
                 continue
             for activity_id, prompt, entry_id, payload in pending:
