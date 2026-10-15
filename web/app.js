@@ -35,6 +35,7 @@ let lkPendingExplorationFamilyId = null;
 let lkCurrentSurfaceCacheKey = null;
 let lkJourneyReturnState = null;
 let lkSuggestedPlaceId = null;
+let lkFocusedFallbackFamilies = [];
 
 function lkSurfaceCacheKey(placeId, familyId = null) {
   return JSON.stringify([placeId, familyId || null]);
@@ -704,6 +705,7 @@ function lkStartFocusedPlace() {
     return;
   }
   const familyId = ownedFamilies[0];
+  lkFocusedFallbackFamilies = ownedFamilies.slice(1);
   const family = lkLearningMap.taskFamilies.find((item) => item.id === familyId);
   if (ownedFamilies.length > 1) {
     lkToast(`這裡有多種練習，先從「${family?.title || "基礎練習"}」開始，也能點下方其他題型。`);
@@ -778,15 +780,24 @@ async function lkStartU1() {
       lkCurrentSurfaceCacheKey = cacheKey;
       lkStorePendingSurface(cacheKey, body, currentPlace.id, requestedFamilyId);
     }
+    lkFocusedFallbackFamilies = [];
   } catch (error) {
     const code = error instanceof Error ? error.message : "runtime_unavailable";
     lkLogRuntimeIssue("surface", error);
     const noSupply = lkIsNoSupplyError(code);
+    if (noSupply && requestedFamilyId && lkFocusedFallbackFamilies.length) {
+      const fallback = lkFocusedFallbackFamilies.shift();
+      lkPendingExplorationFamilyId = fallback;
+      lkSetActivityState("這種題型已經練完，正在找同一個知識點的其他練習…");
+      await lkStartU1();
+      return;
+    }
     document.querySelector("#activityQuestion").hidden = true;
     document.querySelector("#answerHost").replaceChildren();
     submitButton.hidden = true;
     submitButton.disabled = true;
     lkSetActivityState(lkErrorMessage(code, "surface"), !noSupply, noSupply ? "empty" : "error");
+    lkFocusedFallbackFamilies = [];
   }
 }
 
@@ -1468,6 +1479,7 @@ function lkHandleClick(event) {
   if (familyChoice) {
     event.preventDefault();
     event.stopImmediatePropagation();
+    lkFocusedFallbackFamilies = [];
     lkPendingExplorationFamilyId = familyChoice.dataset.packTaskFamilyId || null;
     void lkStartU1();
     return;
@@ -1522,7 +1534,10 @@ function lkHandleClick(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
     if (placeButton.id === "learnAtPlace") lkStartFocusedPlace();
-    else void lkStartU1();
+    else {
+      lkFocusedFallbackFamilies = [];
+      void lkStartU1();
+    }
     return;
   }
   if (submitButton) {
