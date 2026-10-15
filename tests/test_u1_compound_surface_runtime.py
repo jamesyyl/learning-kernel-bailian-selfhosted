@@ -6,7 +6,6 @@ import json
 import tempfile
 import unittest
 import uuid
-from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -186,7 +185,7 @@ class U1CompoundRuntimeTests(unittest.IsolatedAsyncioTestCase):
             restarted = SqliteD1Database.open(db_path)
             try:
                 saved = restarted.connection.execute(
-                    "SELECT COUNT(*) FROM vnext_raw_observations WHERE learner_id = ?",
+                    "SELECT COUNT(*) FROM vnext_learner_records WHERE learner_id = ? AND record_kind = 'observation'",
                     (learner_id,),
                 ).fetchone()[0]
                 self.assertGreaterEqual(saved, 6)
