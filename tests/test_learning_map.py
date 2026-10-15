@@ -60,6 +60,21 @@ class LearningMapPayloadTests(unittest.TestCase):
             focused["u1-5/model-choice"],
         )
 
+        # The complete U1-5 Activity starts from problem structure, regardless
+        # of which of its five knowledge Places the learner entered through.
+        for place in places:
+            if place["id"].startswith("u1-5/"):
+                self.assertEqual(
+                    place["journeyTaskFamilyId"],
+                    "u1-5/family/problem-structure-recognition",
+                )
+                self.assertEqual(
+                    place["journeyStartPlaceId"],
+                    "u1-5/problem-structure",
+                )
+            else:
+                self.assertIsNone(place["journeyTaskFamilyId"])
+
         place_ids = {place["id"] for place in places}
         for road in roads:
             self.assertIn(road["fromPlaceId"], place_ids)
