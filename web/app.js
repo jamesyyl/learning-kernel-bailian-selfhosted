@@ -705,17 +705,23 @@ function lkStartFocusedPlace() {
     lkToast("這個地點目前沒有專屬練習，請先探索相連的學習道路。");
     return;
   }
-  const familyId = ownedFamilies[0];
-  lkFocusedFallbackFamilies = ownedFamilies.slice(1);
+  const journeyFamilyId = place.journeyTaskFamilyId || null;
+  const familyId = journeyFamilyId || ownedFamilies[0];
+  lkFocusedFallbackFamilies = journeyFamilyId ? [...ownedFamilies] : ownedFamilies.slice(1);
   const family = lkLearningMap.taskFamilies.find((item) => item.id === familyId);
-  if (ownedFamilies.length > 1) {
+  if (journeyFamilyId) {
+    lkToast("從同一個情境開始，依序完成模型選擇、方法、計算與最後答案。");
+  } else if (ownedFamilies.length > 1) {
     lkToast(`這裡有多種練習，先從「${family?.title || "基礎練習"}」開始，也能點下方其他題型。`);
   }
   lkPendingExplorationFamilyId = familyId;
-  void lkStartU1({ todayPractice: false });
+  void lkStartU1({
+    todayPractice: false,
+    journeyStartPlaceId: journeyFamilyId ? place.journeyStartPlaceId : null,
+  });
 }
 
-async function lkStartU1({ todayPractice = true } = {}) {
+async function lkStartU1({ todayPractice = true, journeyStartPlaceId = null } = {}) {
   if (selected !== "math") {
     lkToast(`${subjects[selected].name}練習目前尚未開放。`);
     return;
@@ -764,7 +770,11 @@ async function lkStartU1({ todayPractice = true } = {}) {
     }
 
     const startRequest = {
-      currentContext: { ...LK_SURFACE_REQUEST.currentContext, todayPractice },
+      currentContext: {
+        ...LK_SURFACE_REQUEST.currentContext,
+        todayPractice,
+        ...(journeyStartPlaceId ? { currentPlaceLocalId: journeyStartPlaceId } : {}),
+      },
     };
     if (requestedFamilyId) {
       startRequest.currentContext.learnerExplorationTaskFamilyIds = [requestedFamilyId];
