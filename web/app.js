@@ -807,6 +807,8 @@ async function lkStartU1({ todayPractice = true, journeyStartPlaceId = null } = 
     }
     document.querySelector("#activityQuestion").hidden = true;
     document.querySelector("#answerHost").replaceChildren();
+    const helper = document.querySelector("#questionLayout .helper-card");
+    if (helper) helper.hidden = true;
     submitButton.hidden = true;
     submitButton.disabled = true;
     lkSetActivityState(lkErrorMessage(code, "surface"), !noSupply, noSupply ? "empty" : "error");
@@ -844,6 +846,8 @@ function lkLoadSurface(body, title) {
   document.querySelector("#activityTitle").textContent = selectedPlace?.title || title;
   document.querySelector("#activityQuestion").hidden = false;
   document.querySelector("#questionLayout").hidden = false;
+  const helper = document.querySelector("#questionLayout .helper-card");
+  if (helper) helper.hidden = false;
   document.querySelector("#lkNextDecision").hidden = true;
   lkRenderStep(firstStepIndex);
 }
