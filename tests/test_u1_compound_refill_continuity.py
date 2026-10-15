@@ -15,7 +15,9 @@ from learning_kernel.knowledge_packs.math_u1_vnext.scope import PACK_ID, PACK_VE
 from learning_kernel.knowledge_packs.math_u1_vnext.deterministic_generators import (
     build_u1_deterministic_generator_registry,
 )
-from learning_kernel.knowledge_packs.math_u1_vnext.verification import MathU1IndependentVerifier
+from learning_kernel.knowledge_packs.math_u1_vnext.verification import (
+    MathU1IndependentVerifier,
+)
 
 from api import seed_u1
 from api.replenish_u1_pool import replenish_once
@@ -23,7 +25,9 @@ from api.sqlite_d1 import SqliteD1Database
 
 
 class U1CompoundRefillContinuityTests(unittest.IsolatedAsyncioTestCase):
-    async def test_exhausted_primary_adds_whole_scenarios_and_preserves_history(self) -> None:
+    async def test_exhausted_primary_adds_whole_scenarios_and_preserves_history(
+        self,
+    ) -> None:
         learner, environment = "u1-compound-refill-learner", "isolated"
         with tempfile.TemporaryDirectory(prefix="lk-u1-compound-refill-") as temp:
             database_path = Path(temp) / "learning.sqlite3"
@@ -52,10 +56,16 @@ class U1CompoundRefillContinuityTests(unittest.IsolatedAsyncioTestCase):
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
-                            learner, environment, PACK_ID, PACK_VERSION,
+                            learner,
+                            environment,
+                            PACK_ID,
+                            PACK_VERSION,
                             U1_PACK.lifecycle.content_digest,
-                            f"decision/test-issued/{number}", activity_id,
-                            "sha256:" + "0" * 64, "{}", now,
+                            f"decision/test-issued/{number}",
+                            activity_id,
+                            "sha256:" + "0" * 64,
+                            "{}",
+                            now,
                         ),
                     )
                 connection.commit()
@@ -98,7 +108,10 @@ class U1CompoundRefillContinuityTests(unittest.IsolatedAsyncioTestCase):
                     by_scenario.setdefault(scenario_id, set()).add(family_id)
                 self.assertEqual(len(by_scenario), 10)
                 self.assertTrue(
-                    all(value == set(seed_u1.COMPOUND_FAMILY_IDS) for value in by_scenario.values())
+                    all(
+                        value == set(seed_u1.COMPOUND_FAMILY_IDS)
+                        for value in by_scenario.values()
+                    )
                 )
                 self.assertEqual(
                     connection.execute(
@@ -119,13 +132,15 @@ class U1CompoundRefillContinuityTests(unittest.IsolatedAsyncioTestCase):
                         f"/environments/{quote(environment, safe='')}"
                         f"/packs/{quote(PACK_ID, safe='')}/surface"
                     ),
-                    body=json.dumps({
-                        "currentContext": {
-                            "currentPlaceLocalId": "u1-5/problem-structure",
-                            "todayPractice": False,
-                            "learnerExplorationTaskFamilyIds": [primary],
+                    body=json.dumps(
+                        {
+                            "currentContext": {
+                                "currentPlaceLocalId": "u1-5/problem-structure",
+                                "todayPractice": False,
+                                "learnerExplorationTaskFamilyIds": [primary],
+                            }
                         }
-                    }),
+                    ),
                     origin=origin,
                 )
                 self.assertEqual(surface.status, 200, surface.body)

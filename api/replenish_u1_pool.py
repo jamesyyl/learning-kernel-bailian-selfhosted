@@ -276,7 +276,9 @@ async def replenish_once(
                         raise
                     domain_exhausted = True
                     break
-                generated = cast(dict[str, object], payload["generatedActivityArtifact"])
+                generated = cast(
+                    dict[str, object], payload["generatedActivityArtifact"]
+                )
                 activity_id = str(generated["local_id"])
                 prompt = str(
                     cast(dict[str, object], generated["learner_payload"])["prompt"]
@@ -284,13 +286,11 @@ async def replenish_once(
                 entry_id = str(payload["entryId"])
                 if (
                     activity_id in known_ids
-                    or prompt in prompts_by_family.setdefault(
-                        part.task_family.local_id, set()
-                    )
+                    or prompt
+                    in prompts_by_family.setdefault(part.task_family.local_id, set())
                     or entry_id in entry_ids
                     or any(
-                        prior_id == activity_id
-                        or prior_entry == entry_id
+                        prior_id == activity_id or prior_entry == entry_id
                         for prior_id, _, prior_entry, _ in pending
                     )
                 ):
