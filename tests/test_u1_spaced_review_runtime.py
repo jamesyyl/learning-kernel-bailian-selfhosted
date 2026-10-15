@@ -209,9 +209,26 @@ class ReviewE2E(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(active.status, 200, active.body)
                 other_first = await surface(other)
                 self.assertEqual(other_first.status, 200, other_first.body)
-                self.assertEqual(
-                    json.loads(other_first.body)["surface"]["payload"]["activityId"],
-                    seen[0],
+                other_initial = json.loads(other_first.body)
+                other_initial_id = other_initial["surface"]["payload"]["activityId"]
+                self.assertEqual(other_initial_id, seen[0])
+                other_result = await runtime.handle_request(
+                    method="POST",
+                    path=path_for(other) + "/observations",
+                    body=json.dumps(
+                        capture(other_initial, expected[other_initial_id]),
+                        ensure_ascii=False,
+                    ),
+                    origin=ORIGIN,
+                )
+                self.assertEqual(other_result.status, 202, other_result.body)
+                with patch("apps.runtime_vnext.worker.runtime_http.datetime", FutureDateTime):
+                    other_with_due_review = await surface(other)
+                self.assertEqual(other_with_due_review.status, 200, other_with_due_review.body)
+                self.assertNotEqual(
+                    json.loads(other_with_due_review.body)["surface"]["payload"]["activityId"],
+                    other_initial_id,
+                    "Fresh unissued Pool activity must win even when old Evidence is review-due.",
                 )
                 self.assertEqual(conn.execute("PRAGMA quick_check").fetchone()[0], "ok")
                 print(
