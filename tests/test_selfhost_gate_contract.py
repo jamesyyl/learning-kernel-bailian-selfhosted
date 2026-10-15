@@ -82,3 +82,12 @@ def test_live_gate_rejects_wrong_sqlite_revision(tmp_path: Path) -> None:
         pytest.raises(RuntimeError, match="revision"),
     ):
         gate.check_live_service("http://127.0.0.1:18085", database)
+
+
+def test_compose_production_path_uses_local_sqlite_without_cloudflare() -> None:
+    compose = (gate.ROOT / "compose.yaml").read_text(encoding="utf-8")
+    assert "runtime:" in compose and "pool-refiller:" in compose and "web:" in compose
+    assert "LK_DATABASE_PATH: /data/learning-kernel.sqlite3" in compose
+    assert "wrangler" not in compose.casefold()
+    assert "cloudflare" not in compose.casefold()
+    assert "D1_DATABASE_ID" not in compose
