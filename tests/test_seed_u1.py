@@ -79,8 +79,8 @@ class SeedBootstrapSurfaceTests(unittest.TestCase):
                 service.paths,
                 [
                     "/api/packs/install",
-                    f"/api/packs/{PACK_ID}/releases/{PACK_VERSION}/activate",
                     f"/api/packs/{PACK_ID}/releases/{PACK_VERSION}/activity-pool/entries/batch",
+                    f"/api/packs/{PACK_ID}/releases/{PACK_VERSION}/activate",
                 ]
                 * 2,
             )
