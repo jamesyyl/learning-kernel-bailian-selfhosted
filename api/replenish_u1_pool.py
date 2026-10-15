@@ -249,31 +249,62 @@ async def replenish_once(
             ):
                 break
             total_variants_scanned += 1
-            payload = _pool_payload_for_variant(
-                content_digest=content_digest,
-                requirement=requirement,
-                variant_index=variant_index,
-                registry=registry,
-                verifier=verifier,
+            # A multi-step Activity is one supply unit. Admit all of its
+            # observation pieces together, never a primary step on its own.
+            parts = (
+                tuple(
+                    item
+                    for item in U1_GENERATOR_REQUIREMENTS.requirements
+                    if item.task_family.local_id in COMPOUND_FAMILY_IDS
+                )
+                if family_id == COMPOUND_PRIMARY_FAMILY
+                else (requirement,)
             )
-            generated = cast(dict[str, object], payload["generatedActivityArtifact"])
-            activity_id = str(generated["local_id"])
-            prompt = str(
-                cast(dict[str, object], generated["learner_payload"])["prompt"]
-            )
-            entry_id = str(payload["entryId"])
-            if (
-                activity_id in known_ids
-                or prompt in known_prompts
-                or entry_id in entry_ids
-            ):
+            pending: list[tuple[str, str, str, dict[str, object]]] = []
+            for part in parts:
+                payload = _pool_payload_for_variant(
+                    content_digest=content_digest,
+                    requirement=part,
+                    variant_index=variant_index,
+                    registry=registry,
+                    verifier=verifier,
+                )
+                generated = cast(dict[str, object], payload["generatedActivityArtifact"])
+                activity_id = str(generated["local_id"])
+                prompt = str(
+                    cast(dict[str, object], generated["learner_payload"])["prompt"]
+                )
+                entry_id = str(payload["entryId"])
+                if (
+                    activity_id in known_ids
+                    or prompt in prompts_by_family.setdefault(
+                        part.task_family.local_id, set()
+                    )
+                    or entry_id in entry_ids
+                    or any(
+                        prior_id == activity_id
+                        or prior_entry == entry_id
+                        for prior_id, _, prior_entry, _ in pending
+                    )
+                ):
+                    pending.clear()
+                    break
+                pending.append((activity_id, prompt, entry_id, payload))
+            if len(pending) != len(parts):
                 continue
-            additions.append(payload)
+            for activity_id, prompt, entry_id, payload in pending:
+                additions.append(payload)
+                part_family = str(
+                    cast(dict[str, object], payload["generatedActivityArtifact"])[
+                        "task_family"
+                    ]["local_id"]
+                )
+                prompts_by_family.setdefault(part_family, set()).add(prompt)
+                entry_ids.add(entry_id)
+                if part_family == family_id:
+                    known_ids.add(activity_id)
+                    pool_activity_ids.add(activity_id)
             family_additions += 1
-            known_ids.add(activity_id)
-            known_prompts.add(prompt)
-            entry_ids.add(entry_id)
-            pool_activity_ids.add(activity_id)
         if family_additions:
             added_by_family[family_id] = family_additions
             blocked.pop(family_id, None)
