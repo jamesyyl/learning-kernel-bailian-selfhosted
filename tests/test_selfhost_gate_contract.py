@@ -1,0 +1,84 @@
+"""Fail-closed checks for the standalone Docker + SQLite acceptance gate."""
+
+from __future__ import annotations
+
+import sqlite3
+import subprocess
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from scripts import run_selfhost_gate as gate
+
+
+def test_every_root_test_is_explicit_and_no_platform_suite_is_selected() -> None:
+    sdk = gate.ROOT / "vendor" / "learning-kernel-sdk"
+    gate.validate_test_contract(sdk)
+    selected = (*gate.SELFHOST_TESTS, *gate.CANONICAL_SDK_TESTS)
+    assert len(selected) == len(set(selected))
+    assert not any("wrangler" in file or "test_runtime_vnext_worker.py" in file for file in selected)
+
+
+def test_skipped_test_is_not_accepted_as_a_green_gate() -> None:
+    with patch.object(
+        gate.subprocess,
+        "run",
+        return_value=subprocess.CompletedProcess(
+            args=["pytest"], returncode=0, stdout="1 passed, 1 skipped in 0.12s\n"
+        ),
+    ):
+        result = gate.run_group(
+            "simulated-skip",
+            gate.ROOT,
+            ("tests/test_selfhost_gate_contract.py",),
+            gate.ROOT / "vendor" / "learning-kernel-sdk",
+        )
+    assert result["passed"] is False
+    assert result["skipped"] is True
+
+
+def _metadata_db(path: Path, *, revision: str) -> None:
+    with sqlite3.connect(path) as connection:
+        connection.execute("CREATE TABLE vnext_runtime_metadata(key TEXT PRIMARY KEY, value TEXT)")
+        connection.executemany(
+            "INSERT INTO vnext_runtime_metadata(key, value) VALUES (?, ?)",
+            [
+                ("schema_family", gate.EXPECTED_SCHEMA_FAMILY),
+                ("schema_revision", revision),
+            ],
+        )
+        connection.execute("CREATE TABLE selfhosted_migrations(migration_name TEXT PRIMARY KEY)")
+        connection.executemany(
+            "INSERT INTO selfhosted_migrations(migration_name) VALUES (?)",
+            [(f"000{i}_migration.sql",) for i in range(1, 5)],
+        )
+
+
+def test_live_gate_reads_sqlite_without_mutating(tmp_path: Path) -> None:
+    database = tmp_path / "isolated.sqlite3"
+    _metadata_db(database, revision="4")
+    original = database.read_bytes()
+    with patch.object(
+        gate,
+        "_json_get",
+        side_effect=[{"ready": True}, {"places": [{}] * 17}],
+    ):
+        result = gate.check_live_service("http://127.0.0.1:18085", database)
+    assert result["passed"] is True
+    assert result["schemaRevision"] == "4"
+    assert database.read_bytes() == original
+
+
+def test_live_gate_rejects_wrong_sqlite_revision(tmp_path: Path) -> None:
+    database = tmp_path / "wrong-revision.sqlite3"
+    _metadata_db(database, revision="3")
+    with (
+        patch.object(
+            gate,
+            "_json_get",
+            side_effect=[{"ready": True}, {"places": [{}] * 17}],
+        ),
+        pytest.raises(RuntimeError, match="revision"),
+    ):
+        gate.check_live_service("http://127.0.0.1:18085", database)
