@@ -46,7 +46,7 @@ class MathU1CompoundSupplyTests(unittest.TestCase):
                 set(COMPOUND_FAMILY_IDS),
             )
             self.assertEqual(
-                len({entry["observationPointLocalId"] for entry in steps}),
+                len({entry["observationPointId"] for entry in steps}),
                 len(COMPOUND_FAMILY_IDS),
             )
             self.assertEqual(
