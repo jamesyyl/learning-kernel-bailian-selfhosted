@@ -171,6 +171,32 @@ renderHome = function renderHomeWithRuntimeAvailability() {
   }
 };
 
+function lkRenderJourneySubjects() {
+  const heading = document.querySelector("#journey .page-heading");
+  if (!heading) return;
+  let controls = document.querySelector("#journeySubjectChooser");
+  if (!controls) {
+    controls = document.createElement("nav");
+    controls.id = "journeySubjectChooser";
+    controls.className = "journey-subject-chooser";
+    controls.setAttribute("aria-label", "選擇科目");
+    heading.append(controls);
+  }
+  controls.replaceChildren();
+  const subjectInputs = document.querySelectorAll("#homeSubjects .subject-radio");
+  for (const input of subjectInputs) {
+    const key = input.value;
+    if (!subjects[key]) continue;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "journey-subject" + (key === selected ? " is-active" : "");
+    button.dataset.journeySubject = key;
+    button.setAttribute("aria-pressed", String(key === selected));
+    button.textContent = subjects[key].name;
+    controls.append(button);
+  }
+}
+
 renderJourney = function renderRuntimeJourney() {
   const isMath = selected === "math";
   const list = document.querySelector("#journeyList");
@@ -183,6 +209,7 @@ renderJourney = function renderRuntimeJourney() {
   const learnButton = document.querySelector("#learnAtPlace");
   const practiceButton = document.querySelector("#practiceAtPlace");
   if (!list) return;
+  lkRenderJourneySubjects();
 
   const previousScrollTop = list.scrollTop;
   list.replaceChildren();
@@ -1413,6 +1440,7 @@ function lkHandleClick(event) {
   const submitButton = target.closest("#submitAnswer");
   const nextButton = target.closest("#nextActivity");
   const hintButton = target.closest("#hintButtonAside");
+  const subjectChoice = target.closest("[data-journey-subject]");
   const mapPlace = target.closest("[data-pack-place-id]");
   const placeButton = target.closest("#learnAtPlace, #practiceAtPlace");
   const recommendedButton = target.closest("#startRecommended");
@@ -1424,6 +1452,16 @@ function lkHandleClick(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
     lkApplyResponseTool(responseTool);
+    return;
+  }
+
+  if (subjectChoice) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    selected = subjectChoice.dataset.journeySubject || "math";
+    renderSubjectTabs();
+    renderHome();
+    renderJourney();
     return;
   }
 
