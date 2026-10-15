@@ -236,7 +236,6 @@ async def replenish_once(
             continue
 
         known_ids = set(family_pool)
-        known_prompts = prompts_by_family.setdefault(family_id, set())
         start_variant = max_variant_by_family.get(family_id, -1) + 1
         family_additions = 0
         for variant_index in range(
