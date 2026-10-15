@@ -43,3 +43,14 @@
 - 更多 Task Family、多月／跨 Pack 升級的長期複習策略還需要擴展測試。
 - 百煉「沒有題目」現在有友善引導，但 Runtime API 仍回傳 503 供服務內判斷；這是刻意保留的後端語意。
 - PR3/main 與正式服務未合併或升級；封板前仍需完整測試及使用者最後體驗確認。
+
+
+## 2026-10-15 暫停後的接續基線（不得誤判為本輪回歸）
+
+- SDK `fix/u1-evidence-review-rotation-20261015` 在 **WSL Python 3.12** 完整執行 `pytest -q -o addopts= --tb=short`：**1,766 passed、28 failed、71 subtests passed**，約 7 分 43 秒。這表示目前**全量驗收不綠**，不得宣告可合併。
+- 為釐清起因，回到複習輪替前的 SDK 0.3.7 基線 `5eaa458df923b4face4720b553ce8566c41359d7`，以**同一 Python 3.12 測試環境**重跑上述 28 個精確測試 ID：**28 個全數重現失敗**。
+- 28 項分成兩批：**14 項**屬於舊版 Pack artifact／內容／preview 的測試預期，**14 項**屬於 D1 migration／Pack control／Worker readiness 與投影驗收；只能確認它們在本次複習輪替前就存在，**不能因此認定它們無害或無須修復**。
+- 本輪新增的複習輪替範圍：**63 個相關 SDK 回歸通過、Python 3.12 mypy 4 個模組 PASS、SQLite E2E PASS、Chrome 3 種情境 PASS**。這是功能範圍驗收，與「全套綠燈」是兩件不同的事。
+- 18085 隔離 Docker：專案容器、兩個專用 image 與臨時服務密鑰均已移除；8080／18084 均回 HTTP 200。Docker 其餘建置快取未做全域清理。
+- **接續順序**：先保持已驗收的複習輪替分支不變；將 28 項舊失敗獨立分組逐批修復／確認語意，優先處理可能代表真實執行錯誤的 D1/Worker 驗收；每一批都以原來斷言的目的為準，不透過刪測試或放鬆必要檢查取得綠燈；最後再整套重跑，才討論合併或部署。
+- 本機 `lk-owner-review-rotation-20261015/sdk` 是**用於驗收的隔離目錄**；曾因 GitHub clone 鏡像落後而留下 6 個不同於本機 HEAD 的測試／格式修改，這不是使用者 canonical repo，也**不應以 `git reset --hard` 強行覆蓋**。GitHub 隔離分支為發版核對依據。
