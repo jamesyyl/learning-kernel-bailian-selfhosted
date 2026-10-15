@@ -816,3 +816,9 @@ textarea.runtime-free-response {
 @media (max-width: 410px) {
   #journey .journey-list { grid-template-columns: 1fr; }
 }
+
+/* The journey header owns the single compact subject picker.
+   Retain legacy tab markup for compatibility, but never display two pickers. */
+#journey #journeySubjects {
+  display: none;
+}
