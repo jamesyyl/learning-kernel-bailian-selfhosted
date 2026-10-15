@@ -22,6 +22,7 @@ from api.sqlite_d1 import SqliteD1Database
 
 PRIMARY_FAMILY = "u1-5/family/problem-structure-recognition"
 START_PLACE = "u1-5/problem-structure"
+ORIGIN = "http://localhost:18084"
 
 
 def _correct_value(generated: dict[str, object]) -> str:
@@ -75,7 +76,7 @@ class U1CompoundRuntimeTests(unittest.IsolatedAsyncioTestCase):
             database = SqliteD1Database.open(db_path)
             self.addCleanup(database.connection.close)
             runtime = LearnerFeedbackRuntime(
-                compose_vnext_runtime_service(database),
+                compose_vnext_runtime_service(database, surface_cors_origin=ORIGIN),
                 database,
             )
             path = (
@@ -92,6 +93,7 @@ class U1CompoundRuntimeTests(unittest.IsolatedAsyncioTestCase):
                         "learnerExplorationTaskFamilyIds": [PRIMARY_FAMILY],
                     }
                 }),
+                origin=ORIGIN,
             )
             self.assertEqual(surface_response.status, 200, surface_response.body)
             surface = json.loads(surface_response.body)
@@ -162,6 +164,7 @@ class U1CompoundRuntimeTests(unittest.IsolatedAsyncioTestCase):
                         method="POST",
                         path=path + "/observations",
                         body=json.dumps(capture, ensure_ascii=False),
+                        origin=ORIGIN,
                     )
                     self.assertEqual(receipt.status, 202, receipt.body)
                     result = json.loads(receipt.body)
