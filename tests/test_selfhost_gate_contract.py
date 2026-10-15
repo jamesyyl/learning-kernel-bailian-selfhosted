@@ -18,7 +18,10 @@ def test_every_root_test_is_explicit_and_no_platform_suite_is_selected() -> None
     gate.validate_test_contract(sdk)
     selected = (*gate.SELFHOST_TESTS, *gate.CANONICAL_SDK_TESTS)
     assert len(selected) == len(set(selected))
-    assert not any("wrangler" in file or "test_runtime_vnext_worker.py" in file for file in selected)
+    assert not any(
+        "wrangler" in file or "test_runtime_vnext_worker.py" in file
+        for file in selected
+    )
 
 
 def test_skipped_test_is_not_accepted_as_a_green_gate() -> None:
@@ -53,7 +56,9 @@ def _fake_sdk(tmp_path: Path) -> Path:
 
 def _metadata_db(path: Path, *, revision: str, sdk: Path) -> None:
     with sqlite3.connect(path) as connection:
-        connection.execute("CREATE TABLE vnext_runtime_metadata(key TEXT PRIMARY KEY, value TEXT)")
+        connection.execute(
+            "CREATE TABLE vnext_runtime_metadata(key TEXT PRIMARY KEY, value TEXT)"
+        )
         connection.executemany(
             "INSERT INTO vnext_runtime_metadata(key, value) VALUES (?, ?)",
             [
@@ -71,7 +76,9 @@ def _metadata_db(path: Path, *, revision: str, sdk: Path) -> None:
                 (
                     filename,
                     sha256(
-                        (sdk / "apps" / "runtime_vnext" / "migrations" / filename).read_bytes()
+                        (
+                            sdk / "apps" / "runtime_vnext" / "migrations" / filename
+                        ).read_bytes()
                     ).hexdigest(),
                 )
                 for filename in gate.MIGRATION_FILENAMES
@@ -88,9 +95,9 @@ def test_live_gate_reads_sqlite_without_mutating(tmp_path: Path) -> None:
         gate,
         "_json_get",
         side_effect=[
-                {"ready": True},
-                {"places": [{}] * 17, "pack": {"version": "0.3.7"}},
-            ],
+            {"ready": True},
+            {"places": [{}] * 17, "pack": {"version": "0.3.7"}},
+        ],
     ):
         result = gate.check_live_service("http://127.0.0.1:18085", database, sdk)
     assert result["passed"] is True
@@ -129,7 +136,9 @@ def test_live_gate_rejects_modified_migration_checksum(tmp_path: Path) -> None:
     sdk = _fake_sdk(tmp_path)
     database = tmp_path / "tampered.sqlite3"
     _metadata_db(database, revision="4", sdk=sdk)
-    migration = sdk / "apps" / "runtime_vnext" / "migrations" / gate.MIGRATION_FILENAMES[2]
+    migration = (
+        sdk / "apps" / "runtime_vnext" / "migrations" / gate.MIGRATION_FILENAMES[2]
+    )
     migration.write_text("-- modified after DB migration\n", encoding="utf-8")
     with (
         patch.object(
