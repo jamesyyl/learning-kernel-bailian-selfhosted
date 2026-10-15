@@ -31,6 +31,18 @@ class LearningMapPayloadTests(unittest.TestCase):
         )
 
         focused = {place["id"]: set(place["focusedTaskFamilyIds"]) for place in places}
+        # Every learner-selectable Place must have its own observable exercise.
+        # Merely being connected by a Road must not count as direct coverage.
+        self.assertTrue(all(focused.values()), {
+            place_id: "no owned Task Family"
+            for place_id, families in focused.items()
+            if not families
+        })
+        for place in places:
+            self.assertTrue(
+                focused[place["id"]].issubset(set(place["taskFamilyIds"])),
+                place["id"],
+            )
         self.assertIn(
             "u1-1/family/factor-structure-recognition",
             focused["u1-1/factor-structure"],
