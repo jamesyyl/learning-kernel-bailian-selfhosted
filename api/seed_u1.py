@@ -233,21 +233,50 @@ async def seed(database_path: Path, learner_id: str, environment_id: str) -> Non
             f"/api/packs/{quote(PACK_ID, safe='')}/releases/"
             f"{quote(PACK_VERSION, safe='')}"
         )
-        activated = await request(
-            "POST",
-            release_path + "/activate",
-            {
-                "learnerId": learner_id,
-                "environmentId": environment_id,
-                "regionIds": [
-                    region.local_id for region in U1_PACK.learning_map.regions
-                ],
-            },
-        )
-        if activated.status not in (200, 409):
-            raise RuntimeError(
-                f"Pack activation failed ({activated.status}): {activated.body.decode()}"
+        # Upgrade an existing learner through the canonical lifecycle boundary.
+        # A 409 from `activate` is NOT success: the learner may still use 0.3.4.
+        row = database.connection.execute(
+            """
+            SELECT pack_version, content_digest, transition_ordinal
+            FROM vnext_pack_activation_state
+            WHERE learner_id = ? AND environment_id = ? AND pack_id = ?
+            """,
+            (learner_id, environment_id, PACK_ID),
+        ).fetchone()
+        region_ids = [region.local_id for region in U1_PACK.learning_map.regions]
+        if row is None:
+            activated = await request(
+                "POST",
+                release_path + "/activate",
+                {"learnerId": learner_id, "environmentId": environment_id, "regionIds": region_ids},
             )
+            if activated.status != 200:
+                raise RuntimeError(
+                    f"Pack activation failed ({activated.status}): {activated.body.decode()}"
+                )
+        elif row[0] == PACK_VERSION:
+            if row[1] != artifact.content_digest:
+                raise RuntimeError("Active Math U1 release has a different content digest.")
+        else:
+            upgraded = await request(
+                "POST",
+                release_path + "/upgrade",
+                {
+                    "learnerId": learner_id,
+                    "environmentId": environment_id,
+                    "installEnvironment": _install_environment(),
+                    "regionIds": region_ids,
+                    "expectedActive": {
+                        "packVersion": row[0],
+                        "contentDigest": row[1],
+                        "transitionOrdinal": row[2],
+                    },
+                },
+            )
+            if upgraded.status != 200:
+                raise RuntimeError(
+                    f"Pack upgrade failed ({upgraded.status}): {upgraded.body.decode()}"
+                )
 
         pool_payloads = _pool_payloads(artifact.content_digest)
         admitted = await request(
