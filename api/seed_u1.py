@@ -55,6 +55,16 @@ ARTIFACT_DIR = (
 ADMISSION_TOKEN = "in-process-local-bootstrap-only"
 VARIANTS_PER_FAMILY = 10
 GENERATOR_IMPLEMENTATION_VERSION = "2.0.0"
+COMPOUND_VARIANT_START = 1000
+COMPOUND_ACTIVITY_ID = "u1/activity/largest-square-cutting-compound"
+COMPOUND_FAMILY_IDS = (
+    "u1-5/family/problem-structure-recognition",
+    "u1-5/family/model-selection",
+    "u1-5/family/method-selection",
+    "u1-5/family/selected-model-execution",
+    "u1-5/family/second-step-reasoning",
+)
+COMPOUND_PRIMARY_FAMILY = COMPOUND_FAMILY_IDS[0]
 
 
 def _install_environment() -> dict[str, object]:
@@ -75,7 +85,23 @@ def _install_environment() -> dict[str, object]:
     }
 
 
-def _pack_activity_for_family(family_id: str) -> tuple[object, object]:
+def _pack_activity_for_family(
+    family_id: str, *, compound: bool = False
+) -> tuple[object, object]:
+    if compound:
+        matches = [
+            (activity, point)
+            for activity in U1_PACK.activities.activities
+            for point in activity.observation_points
+            if activity.local_id == COMPOUND_ACTIVITY_ID
+            and point.task_family.local_id == family_id
+        ]
+        if len(matches) != 1:
+            raise RuntimeError(
+                f"Expected one authored compound observation for {family_id};"
+                f" found {len(matches)}."
+            )
+        return matches[0]
     matches = [
         (activity, point)
         for activity in U1_PACK.activities.activities
@@ -107,7 +133,10 @@ def _pool_payload_for_variant(
     verifier: MathU1IndependentVerifier,
 ) -> dict[str, object]:
     family_id = requirement.task_family.local_id
-    pack_activity, observation_point = _pack_activity_for_family(family_id)
+    compound = family_id in COMPOUND_FAMILY_IDS and variant_index >= COMPOUND_VARIANT_START
+    pack_activity, observation_point = _pack_activity_for_family(
+        family_id, compound=compound
+    )
     registered = registry.resolve(requirement)
     if not isinstance(registered, MathU1FamilyGenerator):
         raise RuntimeError(
@@ -158,10 +187,10 @@ def _pool_payload_for_variant(
 
 
 def _pool_payloads(content_digest: str) -> tuple[dict[str, object], ...]:
-    """Generate and verify the initial ten Pool variants for every Pack family."""
+    """Admit single-family tasks plus verified five-point compound Activity pieces."""
     registry = build_u1_deterministic_generator_registry()
     verifier = MathU1IndependentVerifier()
-    return tuple(
+    single_step = tuple(
         _pool_payload_for_variant(
             content_digest=content_digest,
             requirement=requirement,
@@ -170,8 +199,22 @@ def _pool_payloads(content_digest: str) -> tuple[dict[str, object], ...]:
             verifier=verifier,
         )
         for requirement in U1_GENERATOR_REQUIREMENTS.requirements
+        if requirement.task_family.local_id != COMPOUND_PRIMARY_FAMILY
         for variant_index in range(VARIANTS_PER_FAMILY)
     )
+    compound = tuple(
+        _pool_payload_for_variant(
+            content_digest=content_digest,
+            requirement=requirement,
+            variant_index=COMPOUND_VARIANT_START + variant_index,
+            registry=registry,
+            verifier=verifier,
+        )
+        for requirement in U1_GENERATOR_REQUIREMENTS.requirements
+        if requirement.task_family.local_id in COMPOUND_FAMILY_IDS
+        for variant_index in range(VARIANTS_PER_FAMILY)
+    )
+    return (*single_step, *compound)
 
 
 async def seed(database_path: Path, learner_id: str, environment_id: str) -> None:
