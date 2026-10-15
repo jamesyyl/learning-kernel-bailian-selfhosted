@@ -20,8 +20,16 @@ def learning_map_payload() -> dict[str, object]:
     family_ids_by_place: dict[str, set[str]] = {
         place_id: set() for place_id in place_by_id
     }
+    # Explicit exploration stays on the chosen Place. A capability merely touching
+    # a Road or Junction must not silently turn into that Place's own activity.
+    focused_family_ids_by_place: dict[str, set[str]] = {
+        place_id: set() for place_id in place_by_id
+    }
     for family in pack.task_families.families:
         capability = capability_by_id[family.primary_capability.local_id]
+        for reference in capability.map_refs:
+            if reference.kind == "place":
+                focused_family_ids_by_place[reference.local_id].add(family.local_id)
         family_place_ids: set[str] = set()
         for reference in capability.map_refs:
             if reference.kind == "place":
@@ -74,6 +82,9 @@ def learning_map_payload() -> dict[str, object]:
                 "realWorldMeaning": place.real_world_meaning,
                 "regionId": region_by_place[place.local_id].local_id,
                 "taskFamilyIds": sorted(family_ids_by_place[place.local_id]),
+                "focusedTaskFamilyIds": sorted(
+                    focused_family_ids_by_place[place.local_id]
+                ),
             }
             for place in pack.learning_map.places
         ],
