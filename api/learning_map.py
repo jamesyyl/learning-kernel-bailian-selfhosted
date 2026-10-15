@@ -16,6 +16,32 @@ def learning_map_payload() -> dict[str, object]:
     road_by_id = {road.local_id: road for road in pack.learning_map.roads}
     junction_by_id = {item.local_id: item for item in pack.learning_map.junctions}
     capability_by_id = {item.local_id: item for item in pack.capabilities.capabilities}
+    # A multi-step authored Activity can be entered from any of its learning
+    # Places. The Pack (not a browser hardcoded route) identifies its first
+    # observable Family and starting Place.
+    journeys_by_place: dict[str, tuple[int, str, str]] = {}
+    for activity in pack.activities.activities:
+        points = activity.observation_points
+        if len(points) < 5:
+            continue
+        initial_capability = capability_by_id[points[0].capability.local_id]
+        starting_places = [
+            ref.local_id for ref in initial_capability.map_refs if ref.kind == "place"
+        ]
+        if len(starting_places) != 1:
+            continue
+        initial_family_id = points[0].task_family.local_id
+        for point in points:
+            capability = capability_by_id[point.capability.local_id]
+            for ref in capability.map_refs:
+                if ref.kind != "place":
+                    continue
+                previous = journeys_by_place.get(ref.local_id)
+                if previous is None or len(points) > previous[0]:
+                    journeys_by_place[ref.local_id] = (
+                        len(points), initial_family_id, starting_places[0]
+                    )
+
     task_families = []
     family_ids_by_place: dict[str, set[str]] = {
         place_id: set() for place_id in place_by_id
@@ -84,6 +110,14 @@ def learning_map_payload() -> dict[str, object]:
                 "taskFamilyIds": sorted(family_ids_by_place[place.local_id]),
                 "focusedTaskFamilyIds": sorted(
                     focused_family_ids_by_place[place.local_id]
+                ),
+                "journeyTaskFamilyId": (
+                    journeys_by_place[place.local_id][1]
+                    if place.local_id in journeys_by_place else None
+                ),
+                "journeyStartPlaceId": (
+                    journeys_by_place[place.local_id][2]
+                    if place.local_id in journeys_by_place else None
                 ),
             }
             for place in pack.learning_map.places
