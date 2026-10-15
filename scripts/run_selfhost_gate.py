@@ -18,6 +18,8 @@ import argparse
 import json
 import os
 import re
+from contextlib import closing
+from hashlib import sha256
 import sqlite3
 import subprocess
 import sys
@@ -56,6 +58,12 @@ CANONICAL_SDK_TESTS = (
 EXPECTED_SCHEMA_FAMILY = "learning-kernel-runtime-vnext"
 EXPECTED_SCHEMA_REVISION = "4"
 MIN_PLACES = 17
+MIGRATION_FILENAMES = (
+    "0001_vnext_runtime.sql",
+    "0002_vnext_activity_pool.sql",
+    "0003_vnext_issued_activity_bindings.sql",
+    "0004_vnext_learner_evidence_release_lookup.sql",
+)
 
 
 def validate_test_contract(sdk: Path) -> None:
@@ -121,7 +129,7 @@ def _json_get(url: str) -> dict[str, object]:
     return result
 
 
-def check_live_service(url: str, database_path: Path) -> dict[str, object]:
+def check_live_service(url: str, database_path: Path, sdk: Path) -> dict[str, object]:
     """Read-only checks; never seed, migrate, issue, or write learner data."""
     origin = url.rstrip("/")
     ready = _json_get(origin + "/api/ready")
@@ -131,10 +139,19 @@ def check_live_service(url: str, database_path: Path) -> dict[str, object]:
     places = map_data.get("places")
     if not isinstance(places, list) or len(places) < MIN_PLACES:
         raise RuntimeError(f"Selfhost learning map has fewer than {MIN_PLACES} Places.")
+    pack_scope = sdk / "learning_kernel" / "knowledge_packs" / "math_u1_vnext" / "scope.py"
+    release_match = re.search(
+        r'^PACK_VERSION = "([^"]+)"', pack_scope.read_text(encoding="utf-8"), re.MULTILINE
+    )
+    if release_match is None:
+        raise RuntimeError("Pinned SDK U1 Pack version cannot be determined.")
+    pack = map_data.get("pack")
+    if not isinstance(pack, dict) or pack.get("version") != release_match.group(1):
+        raise RuntimeError("Live U1 release differs from the pinned SDK.")
     if not database_path.is_file():
         raise RuntimeError(f"SQLite DB missing: {database_path}")
     database_uri = "file:" + database_path.resolve().as_posix() + "?mode=ro"
-    with sqlite3.connect(database_uri, uri=True) as connection:
+    with closing(sqlite3.connect(database_uri, uri=True)) as connection:
         quick = connection.execute("PRAGMA quick_check").fetchone()
         if quick != ("ok",):
             raise RuntimeError(f"SQLite integrity failed: {quick!r}")
@@ -146,16 +163,24 @@ def check_live_service(url: str, database_path: Path) -> dict[str, object]:
             raise RuntimeError("SQLite schema family differs from Runtime.")
         if metadata.get("schema_revision") != EXPECTED_SCHEMA_REVISION:
             raise RuntimeError("SQLite schema revision is not 4.")
-        migrations = {
-            name for (name,) in connection.execute(
-                "SELECT migration_name FROM selfhosted_migrations"
+        migrations = dict(
+            connection.execute(
+                "SELECT migration_name, content_sha256 FROM selfhosted_migrations"
             )
-        }
-        if len(migrations) != 4:
-            raise RuntimeError("Selfhost must contain four recorded, checksum-pinned migrations.")
+        )
+        if set(migrations) != set(MIGRATION_FILENAMES):
+            raise RuntimeError("SQLite recorded migration names do not match pinned SDK.")
+        migration_dir = sdk / "apps" / "runtime_vnext" / "migrations"
+        for name in MIGRATION_FILENAMES:
+            path = migration_dir / name
+            if not path.is_file():
+                raise RuntimeError(f"Pinned SDK migration missing: {name}")
+            if migrations[name] != sha256(path.read_bytes()).hexdigest():
+                raise RuntimeError(f"SQLite migration checksum mismatch: {name}")
     return {"name": "isolated-live-http-and-sqlite", "passed": True,
             "places": len(places), "sqliteIntegrity": "ok",
-            "schemaRevision": EXPECTED_SCHEMA_REVISION, "migrations": 4}
+            "packVersion": release_match.group(1),
+            "schemaRevision": EXPECTED_SCHEMA_REVISION, "migrations": len(MIGRATION_FILENAMES)}
 
 
 def main() -> int:
@@ -179,7 +204,7 @@ def main() -> int:
         results.append(run_group("lk-canonical-portable", sdk, CANONICAL_SDK_TESTS, sdk))
     if args.live_url:
         try:
-            results.append(check_live_service(args.live_url, args.sqlite_db))
+            results.append(check_live_service(args.live_url, args.sqlite_db, sdk))
         except RuntimeError as exc:
             results.append({"name": "isolated-live-http-and-sqlite", "passed": False, "error": str(exc)})
     success = all(result["passed"] for result in results)
