@@ -176,7 +176,7 @@ class U1PoolReplenishmentLifecycleTests(unittest.IsolatedAsyncioTestCase):
                 authorization=f"Bearer {seed_u1.ADMISSION_TOKEN}",
             )
             self.assertIn(admission.status, (200, 201), admission.body)
-            self.assertEqual(json.loads(admission.body)["entryCount"], 260)
+            self.assertEqual(json.loads(admission.body)["entryCount"], len(pool_payloads))
 
             def learner_path(learner_id: str) -> str:
                 return (
@@ -376,7 +376,7 @@ class U1PoolReplenishmentLifecycleTests(unittest.IsolatedAsyncioTestCase):
                     "SELECT COUNT(*) FROM vnext_activity_pool_entries WHERE pack_id=? AND pack_version=?",
                     (PACK_ID, PACK_VERSION),
                 ).fetchone()[0]
-                self.assertEqual(pool_count, 268)
+                self.assertEqual(pool_count, len(pool_payloads) + refill["entriesAdded"])
                 self.assertEqual(
                     restarted.connection.execute(
                         "SELECT COUNT(*) FROM vnext_learner_evidence WHERE learner_id=? AND environment_id=? AND pack_id=?",
