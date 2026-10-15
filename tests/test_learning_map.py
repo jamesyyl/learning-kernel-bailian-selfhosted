@@ -55,6 +55,13 @@ class LearningMapPayloadTests(unittest.TestCase):
             "u1-5/family/model-selection",
             focused["u1-5/model-choice"],
         )
+        # Direct prime/composite practice takes priority over transfer.
+        for place in places:
+            if place["id"] in {"u1-1/prime-number", "u1-1/composite-number"}:
+                self.assertEqual(
+                    place["focusedTaskFamilyIds"][0],
+                    "u1-1/family/direct-prime-composite-classification",
+                )
         self.assertNotIn(
             "u1-5/family/method-selection",
             focused["u1-5/model-choice"],
