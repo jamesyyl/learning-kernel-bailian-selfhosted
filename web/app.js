@@ -34,6 +34,7 @@ let lkLearningMap = null;
 let lkPendingExplorationFamilyId = null;
 let lkCurrentSurfaceCacheKey = null;
 let lkJourneyReturnState = null;
+let lkSuggestedPlaceId = null;
 
 function lkSurfaceCacheKey(placeId, familyId = null) {
   return JSON.stringify([placeId, familyId || null]);
@@ -294,7 +295,11 @@ renderJourney = function renderRuntimeJourney() {
         const familyById = new Map(
           lkLearningMap.taskFamilies.map((family) => [family.id, family]),
         );
-        for (const familyId of selectedPlace.taskFamilyIds || []) {
+        const focused = new Set(selectedPlace.focusedTaskFamilyIds || []);
+        const choices = [...(selectedPlace.taskFamilyIds || [])].sort(
+          (a, b) => Number(focused.has(b)) - Number(focused.has(a)),
+        );
+        for (const familyId of choices) {
           const family = familyById.get(familyId);
           if (!family) continue;
           const item = document.createElement("li");
@@ -308,7 +313,7 @@ renderJourney = function renderRuntimeJourney() {
           purpose.textContent = family.observationPurpose;
           const action = document.createElement("span");
           action.className = "journey-family-action";
-          action.textContent = "探索這個做法";
+          action.textContent = focused.has(familyId) ? "練這個知識點" : "延伸探索（相鄰道路）";
           button.append(title, purpose, action);
           item.append(button);
           taskFamiliesList.append(item);
@@ -370,11 +375,10 @@ function lkReturnToJourney() {
 function lkAdoptSurfaceRoute(surface) {
   const refs = surface?.lineage?.semanticContentRefs;
   const target = Array.isArray(refs) ? refs.at(-1)?.localId : null;
-  if (typeof target !== "string" || !lkLearningMap?.places.some((place) => place.id === target)) {
-    return;
-  }
-  lkRememberPackPlace(target);
-  if (document.querySelector("#journey")?.hidden === false) renderJourney();
+  // The learner's chosen Place is navigation state, not the Runtime destination.
+  // Retain it for return/resume; show the LK-selected destination separately.
+  lkSuggestedPlaceId = typeof target === "string"
+    && lkLearningMap?.places.some((place) => place.id === target) ? target : null;
 }
 
 async function lkLoadLearningMap() {
@@ -561,6 +565,7 @@ function lkErrorMessage(errorCode, context = "activity") {
     trusted_evaluation_response_mismatch: "作答沒有送出，請再試一次。",
     invalid_request: "作答沒有送出，請再試一次。",
     unsupported_response_capability: "這種作答方式還沒準備好。請回到學習旅程，換一個地方練習。",
+    requested_family_mismatch: "練習內容和你選的題型不同，已停止載入，沒有送出作答。",
   };
   return messages[errorCode] || (context === "surface" ? "題目載入出了點問題，請再試一次。" : "作答沒有送出，請再試一次。");
 }
@@ -662,6 +667,24 @@ function lkClearActivity() {
   lkSetActivityState("");
 }
 
+function lkStartFocusedPlace() {
+  const place = lkLearningMap?.places.find(
+    (item) => item.id === LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId,
+  );
+  const ownedFamilies = place?.focusedTaskFamilyIds || [];
+  if (ownedFamilies.length === 0) {
+    lkToast("這個地點目前沒有專屬練習，請先探索相連的學習道路。");
+    return;
+  }
+  const familyId = ownedFamilies[0];
+  const family = lkLearningMap.taskFamilies.find((item) => item.id === familyId);
+  if (ownedFamilies.length > 1) {
+    lkToast(`這裡有多種練習，先從「${family?.title || "基礎練習"}」開始，也能點下方其他題型。`);
+  }
+  lkPendingExplorationFamilyId = familyId;
+  void lkStartU1();
+}
+
 async function lkStartU1() {
   if (selected !== "math") {
     lkToast(`${subjects[selected].name}練習目前尚未開放。`);
@@ -720,6 +743,9 @@ async function lkStartU1() {
     if (body.schemaVersion !== "learning-kernel.surface-ir@1") {
       throw new Error("unexpected_surface_schema");
     }
+    if (requestedFamilyId && body.lineage?.taskFamilyRef?.localId !== requestedFamilyId) {
+      throw new Error("requested_family_mismatch");
+    }
     lkLoadSurface(body, body.surface?.payload?.presentation?.title || `數學 U1｜${currentPlace.title}`);
     if (lkPoints.length === 1) {
       lkCurrentSurfaceCacheKey = cacheKey;
@@ -753,11 +779,17 @@ function lkLoadSurface(body, title) {
     ? semanticRefs.at(-1)?.localId
     : null;
   const selectedPlace = lkLearningMap?.places.find((place) => place.id === selectedPlaceId);
+  const originPlace = lkLearningMap?.places.find(
+    (item) => item.id === LK_SURFACE_REQUEST.currentContext.currentPlaceLocalId,
+  );
   if (selectedPlace) {
     const region = lkLearningMap.regions.find((item) => item.id === selectedPlace.regionId);
     document.querySelector("#activitySubject").textContent = region?.title || "數學 U1";
-    document.querySelector("#activitySubtopic").textContent = selectedPlace.title;
   }
+  const rerouted = selectedPlace && originPlace && selectedPlace.id !== originPlace.id;
+  document.querySelector("#activitySubtopic").textContent = rerouted
+    ? `你選擇：${originPlace.title}｜LK 建議：${selectedPlace.title}`
+    : (originPlace?.title || selectedPlace?.title || "");
   document.querySelector("#activityTitle").textContent = selectedPlace?.title || title;
   document.querySelector("#activityQuestion").hidden = false;
   document.querySelector("#questionLayout").hidden = false;
@@ -1451,7 +1483,8 @@ function lkHandleClick(event) {
   if (placeButton) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    void lkStartU1();
+    if (placeButton.id === "learnAtPlace") lkStartFocusedPlace();
+    else void lkStartU1();
     return;
   }
   if (submitButton) {
