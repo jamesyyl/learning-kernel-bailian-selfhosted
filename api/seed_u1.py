@@ -233,6 +233,21 @@ async def seed(database_path: Path, learner_id: str, environment_id: str) -> Non
             f"/api/packs/{quote(PACK_ID, safe='')}/releases/"
             f"{quote(PACK_VERSION, safe='')}"
         )
+        pool_payloads = _pool_payloads(artifact.content_digest)
+        admitted = await request(
+            "POST",
+            release_path + "/activity-pool/entries/batch",
+            {"entries": list(pool_payloads)},
+            admission=True,
+        )
+        if admitted.status not in (200, 201):
+            raise RuntimeError(
+                f"Pool batch admission failed ({admitted.status}): {admitted.body.decode()}"
+            )
+        admission_result = json.loads(admitted.body)
+        if admission_result.get("entryCount") != len(pool_payloads):
+            raise RuntimeError("Runtime admitted an unexpected number of Pool entries.")
+
         # Upgrade an existing learner through the canonical lifecycle boundary.
         # A 409 from `activate` is NOT success: the learner may still use 0.3.4.
         row = database.connection.execute(
@@ -277,21 +292,6 @@ async def seed(database_path: Path, learner_id: str, environment_id: str) -> Non
                 raise RuntimeError(
                     f"Pack upgrade failed ({upgraded.status}): {upgraded.body.decode()}"
                 )
-
-        pool_payloads = _pool_payloads(artifact.content_digest)
-        admitted = await request(
-            "POST",
-            release_path + "/activity-pool/entries/batch",
-            {"entries": list(pool_payloads)},
-            admission=True,
-        )
-        if admitted.status not in (200, 201):
-            raise RuntimeError(
-                f"Pool batch admission failed ({admitted.status}): {admitted.body.decode()}"
-            )
-        admission_result = json.loads(admitted.body)
-        if admission_result.get("entryCount") != len(pool_payloads):
-            raise RuntimeError("Runtime admitted an unexpected number of Pool entries.")
 
         print(
             f"Math U1 {PACK_VERSION}: {len(pool_payloads)} verified Pool entries "
