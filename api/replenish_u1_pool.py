@@ -31,6 +31,8 @@ from learning_kernel.knowledge_packs.math_u1_vnext.verification import (
 from api.migrations import apply_runtime_migrations
 from api.seed_u1 import (
     ADMISSION_TOKEN,
+    COMPOUND_PRIMARY_FAMILY,
+    COMPOUND_VARIANT_START,
     ARTIFACT_DIR,
     GENERATOR_IMPLEMENTATION_VERSION,
     _pool_payload_for_variant,
@@ -173,9 +175,16 @@ async def replenish_once(
         )
         match = _VARIANT_SUFFIX.search(activity_id)
         if match is not None:
-            max_variant_by_family[family_id] = max(
-                max_variant_by_family.get(family_id, -1), int(match.group(1))
-            )
+            variant = int(match.group(1))
+            # Secondary compound pieces may coexist with ordinary single-step
+            # Family supply. Never let reserved 1000+ compound indices suppress
+            # that Family's normal refill progression.
+            if (family_id == COMPOUND_PRIMARY_FAMILY) == (
+                variant >= COMPOUND_VARIANT_START
+            ):
+                max_variant_by_family[family_id] = max(
+                    max_variant_by_family.get(family_id, -1), variant
+                )
 
     issued_rows = await _rows(
         database,
