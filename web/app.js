@@ -566,6 +566,8 @@ function lkToast(message) {
   if (typeof toast === "function") toast(message);
 }
 
+const LK_NO_SUPPLY_GUIDANCE = "這裡暫時沒有適合的新題或到期複習。先回學習旅程選其他地方，之後再回來看看！";
+
 function lkIsNoSupplyError(errorCode) {
   return [
     "activity_supply_unavailable",
@@ -577,10 +579,10 @@ function lkIsNoSupplyError(errorCode) {
 
 function lkErrorMessage(errorCode, context = "activity") {
   const messages = {
-    activity_supply_unavailable: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
-    activity_supply_completed: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
-    no_legal_route_candidates: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
-    requested_family_exhausted: "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
+    activity_supply_unavailable: LK_NO_SUPPLY_GUIDANCE,
+    activity_supply_completed: LK_NO_SUPPLY_GUIDANCE,
+    no_legal_route_candidates: LK_NO_SUPPLY_GUIDANCE,
+    requested_family_exhausted: LK_NO_SUPPLY_GUIDANCE,
     runtime_http_400: "題目載入出了點問題，請再試一次。",
     runtime_http_500: "題目載入出了點問題，請再試一次。",
     runtime_http_502: "題目載入出了點問題，請再試一次。",
@@ -794,8 +796,8 @@ async function lkStartU1({ todayPractice = true, journeyStartPlaceId = null } = 
     lkFocusedFallbackFamilies = [];
   } catch (error) {
     const code = error instanceof Error ? error.message : "runtime_unavailable";
-    lkLogRuntimeIssue("surface", error);
     const noSupply = lkIsNoSupplyError(code);
+    if (!noSupply) lkLogRuntimeIssue("surface", error);
     if (noSupply && requestedFamilyId && lkFocusedFallbackFamilies.length) {
       const fallback = lkFocusedFallbackFamilies.shift();
       lkPendingExplorationFamilyId = fallback;
@@ -914,7 +916,7 @@ async function lkRequestNextDecision() {
   } catch (error) {
     lkPendingNextSurface = null;
     const code = error instanceof Error ? error.message : "runtime_unavailable";
-    lkLogRuntimeIssue("next-suggestion", error);
+    if (!lkIsNoSupplyError(code)) lkLogRuntimeIssue("next-suggestion", error);
     if (
       code === "activity_supply_unavailable"
       || code === "activity_supply_completed"
@@ -922,7 +924,7 @@ async function lkRequestNextDecision() {
     ) {
       lkShowRecommendationMessage(
         "這次練習完成了",
-        "這裡目前沒有新的練習了。你可以回到學習旅程，看看其他想練習的地方。",
+        LK_NO_SUPPLY_GUIDANCE,
       );
       return;
     }
