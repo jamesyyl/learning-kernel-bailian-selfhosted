@@ -20,7 +20,7 @@ class LearningMapPayloadTests(unittest.TestCase):
         self.assertEqual(len(regions), 5)
         self.assertEqual(len(places), 17)
         self.assertEqual(len(roads), 37)
-        self.assertEqual(len(families), 26)
+        self.assertEqual(len(families), 28)
         self.assertEqual(len({place["id"] for place in places}), 17)
         self.assertEqual(len({road["id"] for road in roads}), 37)
         family_ids = {family["id"] for family in families}
@@ -28,6 +28,24 @@ class LearningMapPayloadTests(unittest.TestCase):
         self.assertEqual(
             {family_id for place in places for family_id in place["taskFamilyIds"]},
             family_ids,
+        )
+
+        focused = {place["id"]: set(place["focusedTaskFamilyIds"]) for place in places}
+        self.assertIn(
+            "u1-1/family/factor-structure-recognition",
+            focused["u1-1/factor-structure"],
+        )
+        self.assertIn(
+            "u1-3/family/common-factor-selection",
+            focused["u1-3/common-factor"],
+        )
+        self.assertIn(
+            "u1-5/family/model-selection",
+            focused["u1-5/model-choice"],
+        )
+        self.assertNotIn(
+            "u1-5/family/method-selection",
+            focused["u1-5/model-choice"],
         )
 
         place_ids = {place["id"] for place in places}
