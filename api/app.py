@@ -23,7 +23,7 @@ _LEARNER_ROUTE = re.compile(
     r"^/api/learners/[^/]+/environments/[^/]+/packs/[^/]+/"
     r"(?:surface|observations)$"
 )
-_SDK_SOURCE_SHA = "851698a7a79d7a6942692e97f8a54f025d09a9c2"
+_SDK_SOURCE_SHA = "36e53887642ab715bf410de76983a9906269b67e"
 
 
 def _json_error(status: int, error: str) -> tuple[int, bytes, dict[str, str]]:
