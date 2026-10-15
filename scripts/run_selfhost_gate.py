@@ -82,6 +82,12 @@ def run_group(label: str, root: Path, paths: tuple[str, ...], sdk: Path) -> dict
     env["PYTHONPATH"] = os.pathsep.join(
         (str(ROOT), str(sdk), env.get("PYTHONPATH", ""))
     )
+    # The original seed and replay tests intentionally read the SDK artifact
+    # and migrations from environment variables. Never fall back to /opt/lk.
+    env["LK_SDK_ROOT"] = str(sdk)
+    env["LK_RUNTIME_MIGRATIONS_DIR"] = str(
+        sdk / "apps" / "runtime_vnext" / "migrations"
+    )
     command = [
         sys.executable, "-m", "pytest",
         "-q", "-ra", "-o", "addopts=", "--tb=short", *paths,
