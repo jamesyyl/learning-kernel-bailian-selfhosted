@@ -31,6 +31,7 @@ SELFHOST_TESTS = (
     "tests/test_learning_map.py",
     "tests/test_migrations.py",
     "tests/test_runtime_http_host.py",
+    "tests/test_selfhost_gate_contract.py",
     "tests/test_sdk_sqlite_migrations.py",
     "tests/test_seed_u1.py",
     "tests/test_sqlite_d1.py",
