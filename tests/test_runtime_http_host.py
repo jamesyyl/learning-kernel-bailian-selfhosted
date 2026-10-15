@@ -14,6 +14,8 @@ class RuntimeHttpHostTests(unittest.TestCase):
         self.assertTrue(_learner_route_allowed("POST", f"{prefix}/observations"))
         self.assertTrue(_learner_route_allowed("OPTIONS", f"{prefix}/observations"))
         self.assertTrue(_learner_route_allowed("GET", "/api/ready"))
+        self.assertTrue(_learner_route_allowed("GET", "/api/learning-map"))
+        self.assertFalse(_learner_route_allowed("POST", "/api/learning-map"))
         self.assertFalse(_learner_route_allowed("GET", "/api/health"))
 
     def test_blocks_privileged_and_unimplemented_routes(self) -> None:

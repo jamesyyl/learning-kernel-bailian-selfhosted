@@ -1,0 +1,74 @@
+{
+  "reportSchema": "math-u1-browser-acceptance@1",
+  "date": "2026-10-14",
+  "environment": {
+    "browser": "Codex in-app Chromium",
+    "host": "127.0.0.1 local acceptance host",
+    "packVersion": "0.3.4",
+    "contentDigest": "sha256:aea207d8eb59619373203dcfaa74614b4b1b6273953257620be54956f6b1cc98",
+    "database": "isolated TemporaryDirectory SQLite; removed when host stopped",
+    "dockerUsed": false
+  },
+  "containerAcceptance": {
+    "dockerClientVersion": "29.8.2",
+    "composeVersion": "5.5.1",
+    "daemonStatus": "unavailable: Docker Desktop Linux engine named pipe was absent",
+    "composeBuildAndRun": "NOT RUN",
+    "existing8080_8081_8084EnvironmentsChanged": false
+  },
+  "map": {
+    "regionsDisplayed": 5,
+    "placesDisplayed": 17,
+    "roadsDisplayed": 37,
+    "roadNavigation": [
+      "U1-2 prime factorization to U1-3 greatest common factor",
+      "U1-3 greatest common factor to U1-5 method selection"
+    ],
+    "familyExplorationAvailable": true
+  },
+  "canonicalNextDecision": {
+    "initialPrompt": "判斷 2 是質數還是合數。",
+    "nextPrompt": "判斷 3 是質數還是合數。",
+    "samePrompt": false,
+    "wrongAnswerStayedOnSameSurface": true,
+    "runtimeRetryFeedbackObserved": true,
+    "correctRetryFeedbackObserved": true
+  },
+  "responseProfiles": [
+    {
+      "capability": "response.single-choice@1",
+      "responseKind": "classification",
+      "runtimeResult": "correct"
+    },
+    {
+      "capability": "response.multi-choice@1",
+      "responseKind": "integer-selection",
+      "runtimeResult": "correct"
+    },
+    {
+      "capability": "response.multi-choice@1",
+      "responseKind": "multi-classification",
+      "runtimeResult": "correct"
+    },
+    {
+      "capability": "response.math@1",
+      "responseKind": "structured-factorization",
+      "runtimeResult": "correct"
+    },
+    {
+      "capability": "response.math@1",
+      "responseKind": "integer",
+      "runtimeResult": "correct"
+    },
+    {
+      "capability": "response.text@1",
+      "responseKind": "free-text factor tree",
+      "runtimeResult": "correct"
+    }
+  ],
+  "surfaceBoundary": {
+    "renderedRuntimeIssuedSurface": true,
+    "answersEvaluatedByRuntime": true,
+    "clientSideGradingOrRecommendation": false
+  }
+}

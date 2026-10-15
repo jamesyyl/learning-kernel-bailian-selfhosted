@@ -12,8 +12,6 @@ import sqlite3
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
 _SqlValue = object
 
 
@@ -88,7 +86,9 @@ class SqliteD1Database:
 
     @classmethod
     def open(cls, path: str | Path) -> SqliteD1Database:
-        connection = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
+        connection = sqlite3.connect(
+            path, check_same_thread=False, isolation_level=None
+        )
         connection.execute("PRAGMA journal_mode = WAL")
         return cls(connection)
 

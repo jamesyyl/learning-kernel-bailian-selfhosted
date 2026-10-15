@@ -61,7 +61,7 @@
   </header>
 
   <main class="app-main">
-    <div class="prototype-note" role="note"><i class="ph ph-info" aria-hidden="true"></i><span>本機數學 U1 已接通 LK Runtime；其他科目與學習摘要尚未開放</span></div>
+    <div class="prototype-note" role="note"><i class="ph ph-info" aria-hidden="true"></i><span>數學 U1 練習已準備好；今天想從哪個地方開始？</span></div>
 
     <section class="view is-active" id="today" aria-labelledby="homeHeading">
       <h1 class="visually-hidden" id="homeHeading">今日學習活動</h1>
@@ -113,6 +113,14 @@
           <h2 id="placeTitle">短文線索</h2>
           <p id="placeDescription">換一篇文章，找出能支持答案的線索。</p>
           <p class="detail-note">這是可以再走一次的地方。是否往前、回頭或換科目，由你決定。</p>
+          <div class="journey-road-section">
+            <h3>相連的學習路線</h3>
+            <ul id="placeRoads" class="journey-road-list" aria-label="相連的學習路線"></ul>
+          </div>
+          <div class="journey-family-section">
+            <h3>此地可探索的學習做法</h3>
+            <ul id="placeTaskFamilies" class="journey-family-list" aria-label="此地可探索的學習做法"></ul>
+          </div>
           <div class="detail-actions"><button class="button button-primary" type="button" id="learnAtPlace"><i class="ph ph-play" aria-hidden="true"></i><span>從這裡學習</span></button><button class="button button-outline" type="button" id="practiceAtPlace"><i class="ph ph-crosshair" aria-hidden="true"></i><span>在這裡練習</span></button></div>
         </aside>
       </div>
@@ -145,8 +153,18 @@
         </article>
         <aside class="helper-card"><span class="helper-icon"><i class="ph ph-lightbulb" aria-hidden="true"></i></span><div><h2>陪練提示</h2><p id="hintText">提示功能會在後續開放。現在可以先自己想想，再送出作答。</p><button class="button button-outline" type="button" id="hintButtonAside" disabled>提示功能準備中</button></div></aside>
       </div>
+      <section class="lk-next-decision" id="lkNextDecision" hidden aria-live="polite" aria-labelledby="lkNextDecisionTitle">
+        <p class="eyebrow">接下來可以這樣學</p>
+        <h2 id="lkNextDecisionTitle">正在找下一個適合的練習…</h2>
+        <p class="lk-next-prompt" id="lkNextDecisionPrompt">正在看看接下來可以練習什麼。</p>
+        <p class="lk-next-reason" id="lkNextDecisionReason"></p>
+        <div class="lk-next-actions">
+          <button class="button button-primary" type="button" id="startLkRecommended" hidden>開始下一個練習<i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+          <button class="button button-outline" type="button" id="returnToJourney">返回學習旅程</button>
+        </div>
+      </section>
       <section class="daily-summary" id="dailySummary" hidden aria-live="polite">
-        <span class="summary-icon"><i class="ph ph-check-circle" aria-hidden="true"></i></span><p class="eyebrow">TODAY PRACTICE</p><h2>今日練習完成</h2><p>你完成了 10 個活動。今天留下的是練習過程，長期狀態仍由後續學習證據確認。</p><div class="summary-facts"><div><span>完成活動</span><strong>10 個</strong></div><div><span>完成時間</span><strong id="summaryTime">—</strong></div></div><button class="button button-primary" type="button" data-page="today">回到今日<i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+        <span class="summary-icon"><i class="ph ph-check-circle" aria-hidden="true"></i></span><p class="eyebrow">今日練習</p><h2>今日練習完成</h2><p>你完成了 10 個練習。之後換個情境再試試看，看看這些方法能不能跟著你。</p><div class="summary-facts"><div><span>完成練習</span><strong>10 個</strong></div><div><span>完成時間</span><strong id="summaryTime">—</strong></div></div><button class="button button-primary" type="button" data-page="today">回到今日<i class="ph ph-arrow-right" aria-hidden="true"></i></button>
       </section>
     </section>
 

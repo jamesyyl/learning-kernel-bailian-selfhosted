@@ -24,6 +24,23 @@ services:
       start_period: 10s
       retries: 3
 
+  pool-refiller:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    image: bailian-selfhosted-runtime:local
+    command: ["python", "-m", "api.replenish_u1_pool", "--watch"]
+    environment:
+      LK_DATABASE_PATH: /data/learning-kernel.sqlite3
+      U1_POOL_REFILL_INTERVAL_SECONDS: ${U1_POOL_REFILL_INTERVAL_SECONDS:-2}
+    volumes:
+      - "${BAILIAN_DATA_PATH:-./data}:/data"
+    depends_on:
+      runtime:
+        condition: service_healthy
+    restart: unless-stopped
+
   web:
     platform: linux/amd64
     build:
