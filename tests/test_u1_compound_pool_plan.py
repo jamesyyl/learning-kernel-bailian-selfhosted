@@ -28,7 +28,7 @@ class MathU1CompoundSupplyTests(unittest.TestCase):
         grouped = defaultdict(list)
         for entry in entries:
             artifact = entry["generatedActivityArtifact"]
-            context_id = artifact["learner_payload"].get("compoundScenarioId")
+            context_id = artifact["learner_payload"].get("composition_context_id")
             if context_id is None:
                 self.assertNotEqual(
                     artifact["task_family"]["local_id"], COMPOUND_PRIMARY_FAMILY
