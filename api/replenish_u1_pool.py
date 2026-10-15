@@ -32,6 +32,7 @@ from api.migrations import apply_runtime_migrations
 from api.seed_u1 import (
     ADMISSION_TOKEN,
     COMPOUND_PRIMARY_FAMILY,
+    COMPOUND_FAMILY_IDS,
     COMPOUND_VARIANT_START,
     ARTIFACT_DIR,
     GENERATOR_IMPLEMENTATION_VERSION,
@@ -168,7 +169,15 @@ async def replenish_once(
         entry_id = str(row["entry_id"])
         activity_id = str(row["artifact_id"])
         family_id = str(row["task_family_id"])
-        pool_activity_ids.add(activity_id)
+        # Supporting observations are not entry points. Counting them as
+        # independently selectable supply masks depleted ordinary Families.
+        if not (
+            family_id in COMPOUND_FAMILY_IDS
+            and family_id != COMPOUND_PRIMARY_FAMILY
+            and (match := _VARIANT_SUFFIX.search(activity_id)) is not None
+            and int(match.group(1)) >= COMPOUND_VARIANT_START
+        ):
+            pool_activity_ids.add(activity_id)
         entry_ids.add(entry_id)
         prompts_by_family.setdefault(family_id, set()).add(
             _pool_prompt(str(row["canonical_json"]))
